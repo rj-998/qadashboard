@@ -919,11 +919,11 @@ function renderWeekly(){
   const stillNeeded=Math.max(0,combinedTotalTarget-combinedTotalPts);
 
   // Average points per tester across both shifts (only testers with data)
-  const testersWithData=ALL_TESTERS.filter(t=>regData[t]||wkndData[t]);
+  const testersWithData=ALL_TESTERS.filter(t=>activeTesters.includes(t)&&(regData[t]||wkndData[t]));
   const avgPtsCombined=testersWithData.length?(combinedTotalPts/testersWithData.length).toFixed(1):0;
 
   document.getElementById('wk-stats').innerHTML=`
-    <div class="stat-card"><div class="stat-label">Total points</div><div class="stat-value c-accent">${combinedTotalPts}</div><div class="stat-sub">all ${testersWithData.length} active testers</div></div>
+    <div class="stat-card"><div class="stat-label">Total points</div><div class="stat-value c-accent">${combinedTotalPts}</div><div class="stat-sub">across ${activeTesters.length} active testers</div></div>
     <div class="stat-card"><div class="stat-label">Target points</div><div class="stat-value" style="color:var(--text2)">${combinedTotalTarget}</div><div class="stat-sub">combined team target</div></div>
     <div class="stat-card"><div class="stat-label">Still needed</div><div class="stat-value ${stillNeeded===0?'c-green':'c-yellow'}">${stillNeeded}</div><div class="stat-sub">${stillNeeded===0?'target reached':'to hit team target'}</div></div>
     <div class="stat-card"><div class="stat-label">Avg per tester</div><div class="stat-value c-accent">${avgPtsCombined}</div><div class="stat-sub">incl. weekend shift</div></div>`;
