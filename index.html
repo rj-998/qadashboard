@@ -835,6 +835,11 @@ function setShift(shift){
   document.getElementById('toggle-regular').className='toggle-btn'+(shift==='regular'?' active':'');
   document.getElementById('toggle-weekend').className='toggle-btn'+(shift==='weekend'?' active-weekend':'');
   document.getElementById('weekend-note').style.display=shift==='weekend'?'flex':'none';
+  if(isPublicMode()){
+    // Public: lock to the correct current week for this shift, don't expose the selector
+    lockPublicWeek();
+    return;
+  }
   const year=parseInt(document.getElementById('wk-year').value);
   populateWkWeekSelect(year);
   renderWeekly();
@@ -936,6 +941,7 @@ function renderWeekly(){
       <td><input class="target-input" type="number" value="${target}" onchange="customTargets['${key}']=parseFloat(this.value)||0;saveCustomTargets();renderWeekly();renderIndividual()"></td>`;
     tbody.appendChild(tr);
   });
+
 }
 
 // ── INDIVIDUAL ──
@@ -1331,6 +1337,19 @@ function parseClaimDate(str){
 function getWeekNum(d){
   const jan1=new Date(d.getFullYear(),0,1);
   return Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
+}
+
+// Weekend shift week runs Thu–Tue. A day that falls on Sun/Mon/Tue (day 0,1,2)
+// still belongs to the PREVIOUS calendar week's weekend cycle.
+function getWeekendWeekNum(d){
+  const day = d.getDay(); // 0=Sun,1=Mon,2=Tue,...,6=Sat
+  // Sun(0), Mon(1), Tue(2) belong to the weekend week that started the previous Thursday
+  if(day===0 || day===1 || day===2){
+    const shifted = new Date(d);
+    shifted.setDate(shifted.getDate() - 7); // go back to be safely in prior week's number
+    return getWeekNum(shifted);
+  }
+  return getWeekNum(d);
 }
 
 function getPeriodKey(d){
@@ -2018,6 +2037,29 @@ function applyRosterIfPublic(){
 }
 
 // ── PUBLIC READ-ONLY MODE ──
+function lockPublicWeek(){
+  const now = new Date();
+  const curYear = now.getFullYear();
+  // Use the correct week boundary depending on the active shift
+  const curWeek = (currentShift==='weekend') ? getWeekendWeekNum(now) : getWeekNum(now);
+  const yearSel = document.getElementById('wk-year');
+  const weekSel = document.getElementById('wk-week');
+  if (yearSel) {
+    if (![...yearSel.options].some(o=>parseInt(o.value)===curYear)) {
+      const o=document.createElement('option'); o.value=curYear; o.textContent=curYear; yearSel.appendChild(o);
+    }
+    yearSel.value = curYear;
+    if (typeof onWkYearChange==='function') onWkYearChange();
+  }
+  if (weekSel) {
+    if (![...weekSel.options].some(o=>parseInt(o.value)===curWeek)) {
+      const o=document.createElement('option'); o.value=curWeek; o.textContent='Week '+curWeek; weekSel.appendChild(o);
+    }
+    weekSel.value = curWeek;
+  }
+  renderWeekly();
+}
+
 function applyPublicMode() {
   const params = new URLSearchParams(window.location.search);
   if (params.get('view') !== 'public') return;
@@ -2041,29 +2083,16 @@ function applyPublicMode() {
     }
   });
 
-  // Lock to the CURRENT week
-  const now = new Date();
-  const curWeek = getWeekNum(now);
-  const curYear = now.getFullYear();
-  const yearSel = document.getElementById('wk-year');
-  const weekSel = document.getElementById('wk-week');
-  if (yearSel) {
-    if (![...yearSel.options].some(o=>parseInt(o.value)===curYear)) {
-      const o=document.createElement('option'); o.value=curYear; o.textContent=curYear; yearSel.appendChild(o);
-    }
-    yearSel.value = curYear;
-    if (typeof onWkYearChange==='function') onWkYearChange();
-  }
-  if (weekSel) {
-    if (![...weekSel.options].some(o=>parseInt(o.value)===curWeek)) {
-      const o=document.createElement('option'); o.value=curWeek; o.textContent='Week '+curWeek; weekSel.appendChild(o);
-    }
-    weekSel.value = curWeek;
-    renderWeekly();
-  }
-  // Hide week/year selectors and shift toggle
-  document.querySelectorAll('#page-weekly .controls, #page-weekly .toggle-group').forEach(el => {
-    el.style.display = 'none';
+  lockPublicWeek();
+  // Hide only the week/year selectors — KEEP the shift toggle visible.
+  // The controls row holds the selectors; the toggle-group is separate so it stays.
+  document.querySelectorAll('#page-weekly .controls').forEach(el => {
+    // Hide the week/year selects but keep the shift toggle if it lives here
+    el.querySelectorAll('select').forEach(s => {
+      const lbl = s.previousElementSibling;
+      if(lbl && lbl.classList.contains('ctrl-label')) lbl.style.display='none';
+      s.style.display='none';
+    });
   });
 
   const title = document.getElementById('topbar-title');
