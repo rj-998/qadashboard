@@ -483,8 +483,13 @@ function parseRosterCSV(text){
   return map;
 }
 
+const EDIT_SECRET = 'wandqa2026'; // change this to your own secret
+function isEditMode(){
+  return new URLSearchParams(window.location.search).get('edit') === EDIT_SECRET;
+}
 function isPublicMode(){
-  return new URLSearchParams(window.location.search).get('view') === 'public';
+  // Public (read-only) is the DEFAULT. Only the secret edit param unlocks editing.
+  return !isEditMode();
 }
 // customTargets: manual overrides by user in the UI
 let customTargets=(new URLSearchParams(window.location.search).get('view')==='public')?{}:JSON.parse(localStorage.getItem('qa_customTargets')||'{}');
