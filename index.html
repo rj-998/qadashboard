@@ -477,7 +477,9 @@ function parseRosterCSV(text){
     if(!tester) return;
     const active = /^y/i.test((r['Active']||r['active']||'').trim());
     const shift = /weekend/i.test((r['Shift']||r['shift']||'').trim()) ? 'weekend' : 'regular';
-    const target = parseFloat(r['Target']||r['target']||36)||36;
+    const rawTarget = (r['Target']!==undefined?r['Target']:r['target']);
+    const parsedTarget = parseFloat(rawTarget);
+    const target = isNaN(parsedTarget) ? 36 : parsedTarget; // allow 0
     map[tester] = { active, shift, target };
   });
   return map;
