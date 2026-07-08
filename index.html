@@ -605,17 +605,16 @@ function parseCSVorTSV(text){
 
 // ── PROCESS HISTORY ──
 function getTarget(tester,week,year){
-  // Public mode: target comes straight from roster CSV
-  if(isPublicMode() && rosterLoaded && rosterMap[tester]){
+  // Target comes from the roster CSV (gid=1027472914) as the single source of truth
+  if(rosterLoaded && rosterMap[tester]){
     return rosterMap[tester].target;
   }
-  // 1. User-edited override
-  const key=`${year}_${tester}_${week}`;
-  if(customTargets[key]!==undefined)return customTargets[key];
-  // 2. From targets CSV
-  if(targetsMap[year]&&targetsMap[year][week]&&targetsMap[year][week][tester]!==undefined)
-    return targetsMap[year][week][tester];
-  // 3. Default
+  // Fallback for editable mode only: user-edited override
+  if(!isPublicMode()){
+    const key=`${year}_${tester}_${week}`;
+    if(customTargets[key]!==undefined)return customTargets[key];
+  }
+  // Default
   return 36;
 }
 
