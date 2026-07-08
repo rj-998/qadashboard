@@ -2111,7 +2111,7 @@ function applyPublicMode() {
 
 (function() {
   const style = document.createElement('style');
-  style.textContent = 'body.public-mode .target-input{pointer-events:none;background:transparent !important;border:none !important;color:var(--text) !important;text-align:left;padding-left:0;} body.public-mode .sidebar-footer{opacity:.7;}';
+  style.textContent = 'body.public-mode #page-weekly table th:last-child, body.public-mode #page-weekly table td:last-child{display:none;} body.public-mode .sidebar-footer{opacity:.7;}';
   document.head.appendChild(style);
 })();
 
