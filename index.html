@@ -487,7 +487,7 @@ function isPublicMode(){
   return new URLSearchParams(window.location.search).get('view') === 'public';
 }
 // customTargets: manual overrides by user in the UI
-let customTargets=JSON.parse(localStorage.getItem('qa_customTargets')||'{}');
+let customTargets=(new URLSearchParams(window.location.search).get('view')==='public')?{}:JSON.parse(localStorage.getItem('qa_customTargets')||'{}');
 function saveCustomTargets(){localStorage.setItem('qa_customTargets',JSON.stringify(customTargets));}
 let currentShift='regular', indShift='regular';
 let chartTrReason=null, chartTrPts=null, chartTrFreq=null, chartErr=null;
@@ -708,6 +708,8 @@ async function loadAllData(){
     historyRaw=parseCSV(histText);
     // Parse roster (used by public mode)
     if(rosterText){ rosterMap = parseRosterCSV(rosterText); rosterLoaded = Object.keys(rosterMap).length>0; }
+    console.log('[Roster] Loaded:', rosterLoaded, '| Testers:', Object.keys(rosterMap).length, '| Public mode:', isPublicMode());
+    if(rosterLoaded) console.log('[Roster] Sample target:', Object.entries(rosterMap)[0]);
     applyRosterIfPublic();
     deriveTesterList();
     deriveTesterList();
