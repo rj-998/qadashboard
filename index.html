@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tester Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#0d0d0d;--bg2:#141414;--bg3:#1c1c1c;--bg4:#242424;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#f0f0f0;--text2:#888;--text3:#555;
+  --accent:#0ea5e9;--accent2:#38bdf8;--accent-glow:rgba(14,165,233,0.12);
+  --green:#22c55e;--green-bg:rgba(34,197,94,0.08);
+  --yellow:#eab308;--yellow-bg:rgba(234,179,8,0.08);
+  --red:#ef4444;--red-bg:rgba(239,68,68,0.08);
+  --blue:#3b82f6;--blue-bg:rgba(59,130,246,0.08);
+  --orange:#f97316;--orange-bg:rgba(249,115,22,0.08);
+  --r:10px;--r-lg:16px;--r-xl:24px;--font:Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+
+.sidebar{position:fixed;top:0;left:0;width:230px;height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:50;}
+.sidebar-brand{padding:24px 20px;border-bottom:1px solid var(--border);}
+.brand-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.brand-icon{width:30px;height:30px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0;}
+.brand-name{font-weight:700;font-size:15px;}
+.brand-sub{font-size:11px;color:var(--text3);}
+.live-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-bg);border:1px solid rgba(34,197,94,0.25);color:var(--green);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;margin-top:8px;}
+.live-dot{width:5px;height:5px;background:var(--green);border-radius:50%;animation:blink 2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.sidebar-nav{flex:1;padding:14px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
+.nav-section-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:10px 10px 5px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);transition:all .15s;border:1px solid transparent;}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{background:var(--accent-glow);border-color:rgba(14,165,233,.25);color:var(--accent2);}
+.nav-item svg{opacity:.6;flex-shrink:0;}
+.nav-item.active svg{opacity:1;}
+.sidebar-footer{padding:14px 20px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);line-height:1.7;}
+
+.main{margin-left:230px;min-height:100vh;display:flex;flex-direction:column;}
+.topbar{height:58px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:40;}
+.topbar-title{font-weight:700;font-size:17px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.content{flex:1;padding:24px 28px;display:flex;flex-direction:column;gap:18px;}
+
+.page{display:none;flex-direction:column;gap:18px;}
+.page.active{display:flex;}
+
+.status-banner{border-radius:var(--r-lg);padding:14px 18px;font-size:13px;line-height:1.7;}
+.status-loading{background:var(--blue-bg);border:1px solid rgba(59,130,246,.2);color:var(--blue);}
+.status-error{background:var(--red-bg);border:1px solid rgba(239,68,68,.2);color:var(--red);}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(59,130,246,.3);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ctrl-label{font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
+select{background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--font);font-size:13px;font-weight:600;padding:6px 28px 6px 10px;border-radius:var(--r);cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;transition:border-color .15s;}
+select:hover{border-color:rgba(255,255,255,.2);}
+select:focus{border-color:var(--accent);}
+select option{background:var(--bg2);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:600;font-family:var(--font);transition:all .15s;border:1px solid;}
+.btn-primary{background:var(--accent-glow);border-color:rgba(14,165,233,.3);color:var(--accent2);}
+.btn-primary:hover{background:rgba(14,165,233,.2);}
+
+/* TOGGLE */
+.toggle-group{display:flex;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:3px;gap:3px;}
+.toggle-btn{padding:5px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text2);transition:all .15s;font-family:var(--font);border:none;background:transparent;}
+.toggle-btn.active{background:var(--accent);color:#fff;}
+.toggle-btn.active-weekend{background:var(--orange);color:#fff;}
+
+/* WEEKEND BANNER */
+.weekend-banner{background:linear-gradient(135deg,rgba(249,115,22,.07) 0%,transparent 70%);border:1px solid rgba(249,115,22,.2);border-radius:var(--r-lg);padding:10px 16px;font-size:12px;color:var(--orange);font-weight:600;display:flex;align-items:center;gap:8px;}
+
+.stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;}
+.stat-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.stat-value{font-size:30px;font-weight:700;letter-spacing:-1.5px;line-height:1;}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+.c-green{color:var(--green);}.c-yellow{color:var(--yellow);}.c-red{color:var(--red);}.c-accent{color:var(--accent2);}.c-orange{color:var(--orange);}
+
+.week-banner{background:linear-gradient(135deg,rgba(14,165,233,.07) 0%,transparent 70%);border:1px solid rgba(14,165,233,.18);border-radius:var(--r-lg);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.week-banner-text{font-size:14px;font-weight:700;color:var(--accent2);}
+.week-banner-sub{font-size:12px;color:var(--text3);margin-top:2px;}
+
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);}
+.card-title{font-size:13px;font-weight:700;}
+
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead tr{background:var(--bg3);}
+th{text-align:left;padding:9px 14px;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;}
+td{padding:11px 14px;border-top:1px solid var(--border);vertical-align:middle;}
+tbody tr:hover{background:rgba(255,255,255,.018);}
+.tester-name{font-weight:700;display:flex;align-items:center;gap:8px;}
+.avatar{width:27px;height:27px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#fff;}
+.pts-cell{font-size:16px;font-weight:700;letter-spacing:-.5px;}
+
+.progress-wrap{width:100%;height:4px;background:var(--bg4);border-radius:99px;overflow:hidden;}
+.progress-bar{height:100%;border-radius:99px;transition:width .4s ease;}
+.progress-wrap-lg{width:100%;height:6px;background:var(--bg4);border-radius:99px;overflow:hidden;}
+.progress-bar-lg{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1);}
+
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+.badge-hit{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,.2);}
+.badge-miss{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.2);}
+.badge-close{background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(234,179,8,.2);}
+.badge-live{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(59,130,246,.2);}
+.badge-none{background:var(--bg3);color:var(--text3);border:1px solid var(--border);}
+
+.target-input{width:64px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--font);font-size:13px;font-weight:600;padding:4px 7px;border-radius:7px;text-align:center;outline:none;}
+.target-input:focus{border-color:var(--accent);}
+
+.tester-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;}
+.tester-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;transition:border-color .2s;}
+.tester-card:hover{border-color:var(--border2);}
+.tester-card-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg3);}
+.tester-card-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;}
+.tester-card-body table{font-size:12px;}
+.tester-card-body th{font-size:10px;padding:7px 11px;}
+.tester-card-body td{padding:7px 11px;font-size:12px;}
+
+.chart-container{position:relative;width:100%;}
+.chart-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text2);}
+.legend-item{display:flex;align-items:center;gap:5px;}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+
+.games-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.top-list-item{display:flex;align-items:center;padding:8px 16px;font-size:12px;border-bottom:1px solid var(--border);}
+.top-list-item:last-child{border-bottom:none;}
+.top-list-rank{font-size:10px;font-weight:700;color:var(--text3);width:18px;flex-shrink:0;}
+.top-list-name{flex:1;padding:0 8px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.top-list-val{font-weight:700;color:var(--accent2);flex-shrink:0;}
+
+.insight-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.insight-hero{background:linear-gradient(135deg,var(--bg2) 0%,rgba(14,165,233,.04) 100%);border:1px solid var(--border);border-radius:var(--r-xl);padding:22px;display:flex;flex-direction:column;gap:16px;}
+.insight-tester-header{display:flex;align-items:center;gap:13px;}
+.insight-avatar{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;flex-shrink:0;}
+.insight-name{font-size:19px;font-weight:700;}
+.insight-week-label{font-size:12px;color:var(--text3);margin-top:2px;}
+.big-number{font-size:50px;font-weight:700;letter-spacing:-3px;line-height:1;}
+.big-number span{font-size:18px;letter-spacing:0;color:var(--text3);font-weight:400;}
+.insight-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.insight-stat{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:13px;}
+.insight-stat-label{font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.insight-stat-val{font-size:21px;font-weight:700;}
+.insight-rows{display:flex;flex-direction:column;}
+.insight-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.insight-row:last-child{border-bottom:none;}
+.insight-row-label{color:var(--text2);}
+.insight-row-val{font-weight:700;}
+.insight-blurb{font-size:13px;color:var(--text2);line-height:1.7;background:var(--bg3);border-radius:var(--r);padding:13px 15px;border:1px solid var(--border);}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-row">
+      <div class="brand-icon" style="background:transparent;padding:0;overflow:hidden;border-radius:6px;"><img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCADvAPADASIAAhEBAxEB/8QAGwABAQEBAAMBAAAAAAAAAAAAAAkGCAIEBQf/xAA9EAEAAAQCCAMFBQYHAQAAAAAAAQIDBgQFBxEWN1Z1lNEhsbMICRIxsjQ2UXN0ExciQmGRIzJBQ2KVwYH/xAAcAQEAAQUBAQAAAAAAAAAAAAAAAwECBAYIBwX/xAA3EQEAAQIBBwoFBAIDAAAAAAAAAQIDEQQFBhITMWEHFyEyNFRykrHSNUFRkbJxgqHBIyRi0fD/2gAMAwEAAhEDEQA/AOkwHIjNAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHhXrUsPQqV69WSlSpyxnnnnmhLLLLDxjGMY+EIQ/F5slpp3PXnyHHehOmya1tr1FvHDWmI+84KS+vtNbfEOUdbT7m01t8Q5R1tPulqPXeay13mfLHuQ7bgqVtNbfEOUdbT7m01t8Q5R1tPulqHNZa7zPlj3G24Km0LhyCvWkoUM8yyrVqTQlkkkxdOaaaMflCEIR8Yvpptez7vstDmlLzUlaLpXo5TmHKKLNNzX1ox3YfPD6ykoq1nq5hmWXZdCSOYZhhMHCpr+D9vWlp/Fq+erXGGt6e01t8Q5R1tPu5194F93LU/V1/olcfvv6O6B288ZBRldV+adbHo1cd0zH1hbVc1ZwwVK2mtviHKOtp9zaa2+Ico62n3S1H2+ay13mfLHuW7bgqVtNbfEOUdbT7vby/NMszGaeXL8xweMjThCM8KFeWp8Ov5a9UY6vlH+yVTqv3e/wBrvT8vBedd8fP+gFvNOb7mWRfmrVw6NXDfMRvx4rqbmtOGDrV8yvcOQUK09CvnmWUqtOaMs8k+LpyzSxh84RhGPhF9NNr2gt9l380rebXdFNHKc/ZRXZquamrGO7H54fWF1dWqoftNbfEOUdbT7m01t8Q5R1tPulqN65rLXeZ8se5HtuCpW01t8Q5R1tPubTW3xDlHW0+6Woc1lrvM+WPcbbgq7QrUsRQp16FWSrSqSwnknkmhNLNLHxhGEYeEYR/F5sloW3PWZyHA+hI1ryLKbWxvV28cdWZj7SmgAQqgAAAAADJaadz158hx3oTtayWmnc9efIcd6E7Mzf2u14qfWFJ3JmAOr2GAA2ugjfNaHN8P9cFK01NBG+a0Ob4f64KVvE+VHttjwz6p7O5y/wC8C+7lqfrK/wBErj92B7wL7uWp+sr/AESuP288n/wK1+tX5SjudYAbmsHVfu9/td6fl4LzruVHVfu9/td6fl4LzrtR07+A5R+386V9vrQ61Ta9oLfZd/NKvmpKm17QW+y7+aVfNoHJf2+94P7hJe3MIA9tQAAKZ6Ftz1mchwPoSNayWhbc9ZnIcD6EjWuUM49ru+Kr1lmRuAGGqAAAAAAMlpp3PXnyHHehO1rJaadz158hx3oTszN/a7Xip9YUncmYA6vYYADa6CN81oc3w/1wUrTQ0I1I0tMVnzwhCOvOsLL4/wBassP/AFS94pyox/u2J/4z6p7O5y/7wL7uWp+sr/RK4/dge8C+7lqfrK/0SuP28cn/AMCtfrV+Uo7nWAG5rB1X7vf7Xen5eC867lR1X7vf7Xen5eC867UdO/gOUft/Olfb60OtU2vaC32XfzSr5qSpte0Fvsu/mlXzaByX9vveD+4SXtzCAPbUAACmehbc9ZnIcD6EjWsloW3PWZyHA+hI1rlDOPa7viq9ZZkbgBhqgAAAAADJaadz158hx3oTtayWmnc9efIcd6E7Mzf2u14qfWFJ3JmAOr2GAA1uhje/Z3PMH60imaY2ifF4XL9KNrY7HYilhsLh84wtWtWqzfDJTklqyxmmjGPyhCENetQT97OjHj63P+wp93jvKXkl+/ldibVE1YUzuiZ+fBPanofinvAvu5an6yv9Erj91J7bd42pc+Q23St24sszapQxVaarLhMTLUjJCMssIRjqj4OW25aCWrlrMlqi5TMTjV0TGE9aUdzrADcFg6r93v8Aa70/LwXnXcqOkvYfuu2bXxN2TXHn2XZTDEyYSFCOLxEtL9p8Ma3xfDrj46tcP7warptaru5jv0W4mZnV6I6Z69K+31nZybXtBb7Lv5pV83eH72dGPH1uf9hT7uBtN+PwWaaXLozDLsVRxeDxGY1alGvRnhNJUljHwjCMPnBonJpkmUWMuvTdommNX5xMfOPqkuzGDGgPZUAACmehbc9ZnIcD6EjWsloW3PWZyHA+hI1rlDOPa7viq9ZZkbgBhqgAAAAADJaadz158hx3oTta+ZdmVyZ3a2bZNVl+KTH4Kthpoa9WuE8kZf8A1kZHci1lFuurdExP2lSdyWQ861OpRrT0a1OenUpzRlnknhqmljDwjCMI/KLwdZ72GAAAAAAAAAAAAAAAApnoW3PWZyHA+hI1rJaFtz1mchwPoSNa5Qzj2u74qvWWZG4AYaoAAAAAAACfXtYWTPZ2l3H1qNGaTLc5jHMMLNCEfh1zx/xZNf4wn1x1f6Qml/F+SKQaedGuB0m2PVympGnRzPDRjWy3FTf7VXV/lmjDx+Cb5R/+R1a4QTuuDJ8zt/OsXkuc4KrgcwwlSNOvQqw1TSTeUYRhqjCMPCMIwjDXCLofQjSCjOmQU2q5/wAtuIiY+sR0RV/3x/WGNcpwl6ADdEYAAAAAAAAAAAAACmehbc9ZnIcD6EjWsloW3PWZyHA+hI1rlDOPa7viq9ZZkbgBhqgAAAAAAAD880zaIrX0nZZCTM6ccHmtGT4cLmVCWH7Wn/xmh/PJr/lj/XVGEY636GMnJMsv5HepvZPVNNUbpj/38KTGO9PXSNoB0j2biKs8MnqZ3l0sf4MZlssasIy646vipw/jkjq1a9cNUNfzi/LK1KrQqzUa1OenUkjqmknljCMsfwjCPyVdenjsqyvHzQmx2WYLFRh8o1qEs8Yf3g9KyHlQyi3RFOVWYrn6xOr/ABhP8YIptR8kqxUrZm2+Hso6Kn2Nmbb4eyjoqfZ9DnTtd2nzR7VNjxS1FStmbb4eyjoqfY2Ztvh7KOip9jnTtd2nzR7TY8UtRUrZm2+Hso6Kn2Nmbb4eyjoqfY507Xdp80e02PFLUVK2Ztvh7KOip9jZm2+Hso6Kn2OdO13afNHtNjxS1FStmbb4eyjoqfY2Ztvh7KOip9jnTtd2nzR7TY8UtRUrZm2+Hso6Kn2Nmbb4eyjoqfY507Xdp80e02PFLUVK2Ztvh7KOip9jZm2+Hso6Kn2OdO13afNHtNjxfI0LbnrM5DgfQka14UKNLD0KdChSkpUqcsJJJJJYSyyyw8IQhCHhCEPwebyLKbu2vV3MMNaZn7ymgAQqgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/2Q==" alt="Wand" style="width:30px;height:30px;object-fit:cover;border-radius:6px;"></div>
+      <div><div class="brand-name">Team Dashboard</div><div class="brand-sub">QA Testers</div></div>
+    </div>
+    <div class="live-badge"><div class="live-dot"></div><span id="live-label">Loading…</span></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <div class="nav-item active" onclick="switchPage('weekly',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Weekly Tracker
+    </div>
+    <div class="nav-item" onclick="switchPage('individual',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Individual View
+    </div>
+    <div class="nav-item" onclick="switchPage('daily',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Daily Tracker
+    </div>
+    <div class="nav-item" onclick="switchPage('claims',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Support Claims
+    </div>
+    <div class="nav-section-label">Analytics</div>
+    <div class="nav-item" onclick="switchPage('trends',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Game Trends
+    </div>
+    <div class="nav-item" onclick="switchPage('errors',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Reporting Errors
+    </div>
+    <div class="nav-section-label">Reports</div>
+    <div class="nav-item" onclick="switchPage('insights',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Tester Insights
+    </div>
+    <div class="nav-item" onclick="switchPage('export',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="8 13 12 17 16 13"/><line x1="12" y1="17" x2="12" y2="9"/></svg>
+      Export Report
+    </div>
+    <div class="nav-item" onclick="switchPage('settings',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </div>
+  </nav>
+  <div class="sidebar-footer" id="sidebar-footer">Target: — pts / week<br><span id="footer-active-count">—</span> active testers<br><span id="last-updated" style="color:var(--text3)"></span></div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Weekly Tracker</div>
+    <div class="topbar-right">
+      <button class="btn" style="background:var(--red-bg);border-color:rgba(239,68,68,.3);color:var(--red);" onclick="if(confirm('Clear all saved target overrides?')){customTargets={};saveCustomTargets();renderWeekly();renderIndividual();}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        Clear target edits
+      </button>
+      <button class="btn btn-primary" onclick="loadAllData()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh data
+      </button>
+    </div>
+  </div>
+  <div class="content">
+    <div id="global-status"></div>
+
+    <!-- WEEKLY -->
+    <div class="page active" id="page-weekly">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div class="controls">
+          <span class="ctrl-label">Year</span><select id="wk-year" onchange="onWkYearChange()"></select>
+          <span class="ctrl-label">Week</span><select id="wk-week" onchange="renderWeekly()"></select>
+        </div>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="toggle-regular" onclick="setShift('regular')">Regular</button>
+          <button class="toggle-btn" id="toggle-weekend" onclick="setShift('weekend')">Weekend Shift</button>
+        </div>
+      </div>
+      <div id="weekend-note" style="display:none" class="weekend-banner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Weekend shift week: Thu–Tue. Points span two calendar weeks.
+      </div>
+      <div id="wk-stats" class="stat-strip"></div>
+      <div id="wk-banner" class="week-banner"></div>
+      <div class="card">
+        <div class="card-header"><span class="card-title" id="wk-table-title">Points tracker — Regular testers</span><span style="font-size:11px;color:var(--text3)">Targets are editable</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Tester</th><th>Points</th><th>Target</th><th style="min-width:130px">Progress</th><th>Remaining</th><th>Excess</th><th>Status</th><th>Edit target</th></tr></thead>
+          <tbody id="wk-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- INDIVIDUAL -->
+    <div class="page" id="page-individual">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div></div>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="ind-toggle-regular" onclick="setIndShift('regular')">Regular</button>
+          <button class="toggle-btn" id="ind-toggle-weekend" onclick="setIndShift('weekend')">Weekend Shift</button>
+        </div>
+      </div>
+      <div id="ind-grid" class="tester-grid"></div>
+    </div>
+
+    <!-- SUPPORT CLAIMS -->
+    <div class="page" id="page-claims">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="claims-toggle-monthly" onclick="setClaimsView('monthly')">Monthly</button>
+            <button class="toggle-btn" id="claims-toggle-weekly" onclick="setClaimsView('weekly')">Weekly</button>
+          </div>
+          <div class="controls" id="claims-controls"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;" id="claims-status-filters"></div>
+      </div>
+      <div id="claims-stats" class="stat-strip"></div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title" id="claims-table-title">Monthly claims tracker</span>
+          <span style="font-size:11px;color:var(--text3)">From March 1, 2026 · sorted by Discord/Slack date</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead id="claims-thead"></thead>
+            <tbody id="claims-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRENDS -->
+    <div class="page" id="page-trends">
+      <div class="controls">
+        <span class="ctrl-label">Year</span><select id="tr-year" onchange="onTrYearChange()"></select>
+        <span class="ctrl-label">Week</span><select id="tr-week" onchange="renderTrends()"></select>
+        <span class="ctrl-label">Tester</span><select id="tr-tester" onchange="renderTrends()"><option value="ALL">All testers</option></select>
+      </div>
+      <div class="games-layout">
+        <div class="card"><div class="card-header"><span class="card-title">Top games tested this week</span></div><div id="tr-games-list"></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">Test type breakdown</span><div class="chart-legend" id="tr-legend"></div></div>
+          <div style="padding:16px"><div class="chart-container" style="height:260px"><canvas id="tr-reason-chart" role="img" aria-label="Test type breakdown by points"></canvas></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Points frequency</span><span style="font-size:11px;color:var(--text3)">How many games tested per point value</span></div>
+        <div style="padding:16px"><div class="chart-container" style="height:240px"><canvas id="tr-freq-chart" role="img" aria-label="Points frequency chart"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ERRORS -->
+    <div class="page" id="page-errors">
+      <div class="controls">
+        <span class="ctrl-label">Month</span><select id="err-month" onchange="renderErrors()"></select>
+        <span class="ctrl-label">Year</span><select id="err-year" onchange="renderErrors()"></select>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Reporting errors by tester</span><div class="chart-legend" id="err-legend"></div></div>
+        <div style="padding:16px"><div class="chart-container" id="err-chart-wrap" style="height:320px"><canvas id="errors-chart" role="img" aria-label="Error chart"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="page" id="page-insights">
+      <div class="controls">
+        <span class="ctrl-label">Tester</span><select id="ins-tester" onchange="renderInsights()"></select>
+        <span class="ctrl-label">Year</span><select id="ins-year" onchange="onInsYearChange()"></select>
+        <span class="ctrl-label">Week</span><select id="ins-week" onchange="renderInsights()"></select>
+      </div>
+      <div id="ins-content"></div>
+    </div>
+
+    <!-- DAILY TRACKER -->
+    <div class="page" id="page-daily">
+      <div class="controls" style="margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+        <span class="ctrl-label">Year</span>
+        <select id="daily-year" class="ctrl-select" onchange="renderDaily()"></select>
+        <span class="ctrl-label">Week</span>
+        <select id="daily-week" class="ctrl-select" onchange="renderDaily()"></select>
+        <div class="toggle-group" style="margin-left:8px;">
+          <button class="toggle-btn active" id="daily-toggle-regular" onclick="setDailyShift('regular')">Regular</button>
+          <button class="toggle-btn" id="daily-toggle-weekend" onclick="setDailyShift('weekend')">Weekend ☽</button>
+        </div>
+      </div>
+      <div id="daily-table-wrap" class="card" style="overflow-x:auto;"></div>
+    </div>
+
+    <!-- EXPORT REPORT -->
+    <div class="page" id="page-export">
+      <div class="controls" style="margin-bottom:18px;flex-wrap:wrap;gap:12px;">
+        <div>
+          <span class="ctrl-label">Report Type</span>
+          <div class="toggle-group" style="display:inline-flex;margin-left:8px;">
+            <button class="toggle-btn active" id="exp-toggle-weekly" onclick="setExportType('weekly')">Weekly</button>
+            <button class="toggle-btn" id="exp-toggle-monthly" onclick="setExportType('monthly')">Monthly</button>
+          </div>
+        </div>
+        <div id="exp-period-controls" class="controls"></div>
+        <button class="btn btn-primary" onclick="exportPDF()" style="margin-left:auto;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="8 13 12 17 16 13"/><line x1="12" y1="17" x2="12" y2="9"/></svg>
+          Download PDF
+        </button>
+      </div>
+      <div id="exp-preview" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px;"></div>
+    </div>
+  </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div style="max-width:600px;">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:20px;">Select which testers are active. Only active testers will appear across all dashboard views.</div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;">
+          <button class="btn btn-secondary" onclick="setAllTesters(true)">Select All</button>
+          <button class="btn btn-secondary" onclick="setAllTesters(false)">Deselect All</button>
+        </div>
+        <div id="tester-toggle-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;"></div>
+        <div style="margin-top:20px;">
+          <button class="btn btn-primary" onclick="applyTesterSettings()">Apply & Refresh Dashboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+const URL_HISTORY = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQmpijJxKw4NgF_lZdpiPFIxdxq43YPK8ZJtkfJLVz7UYrbCSe_9LKP08DZKOjZvyRMI9yYV9hgbuT/pub?gid=1017591861&single=true&output=csv';
+const URL_QUALITY = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQmpijJxKw4NgF_lZdpiPFIxdxq43YPK8ZJtkfJLVz7UYrbCSe_9LKP08DZKOjZvyRMI9yYV9hgbuT/pub?gid=639826145&single=true&output=csv';
+const URL_ROSTER = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQmpijJxKw4NgF_lZdpiPFIxdxq43YPK8ZJtkfJLVz7UYrbCSe_9LKP08DZKOjZvyRMI9yYV9hgbuT/pub?gid=1027472914&single=true&output=csv';
+const URL_TARGETS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQmpijJxKw4NgF_lZdpiPFIxdxq43YPK8ZJtkfJLVz7UYrbCSe_9LKP08DZKOjZvyRMI9yYV9hgbuT/pub?gid=1860802484&single=true&output=csv';
+const URL_SUPPORT = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQmpijJxKw4NgF_lZdpiPFIxdxq43YPK8ZJtkfJLVz7UYrbCSe_9LKP08DZKOjZvyRMI9yYV9hgbuT/pub?gid=767607684&single=true&output=csv';
+
+let WEEKEND_TESTERS = JSON.parse(localStorage.getItem('qa_weekendTesters') || 'null') || ['jayr2388','wand_rosa','wand_aiden'];
+const WEEKEND_CUTOFF_WEEK = 16;
+const WEEKEND_DAYS_CURRENT = [5,6,7];
+const WEEKEND_DAYS_NEXT    = [1,2,3];
+
+let ALL_TESTERS = JSON.parse(localStorage.getItem('qa_allTesters') || 'null') || ['AntiMatter25','Bobdudeman','Cheszter','Izzyhan','jayr2388','JustineG','kevkev16','Kyleb2024','LizVamp','lndcstro','Sephyyy','wand_aiden','wand_alexg','wand_rosa'];
+let REGULAR_TESTERS = ALL_TESTERS.filter(t=>!WEEKEND_TESTERS.includes(t));
+let activeTesters = JSON.parse(localStorage.getItem('qa_activeTesters') || 'null') || [...ALL_TESTERS];
+
+function saveTesterSettings(){
+  localStorage.setItem('qa_allTesters', JSON.stringify(ALL_TESTERS));
+  localStorage.setItem('qa_weekendTesters', JSON.stringify(WEEKEND_TESTERS));
+  localStorage.setItem('qa_activeTesters', JSON.stringify(activeTesters));
+  REGULAR_TESTERS = ALL_TESTERS.filter(t=>!WEEKEND_TESTERS.includes(t));
+}
+function saveActiveTesters(){ saveTesterSettings(); }
+function isActive(t){ return activeTesters.includes(t); }
+
+function deriveTesterList(){
+  const found = new Set();
+  historyRaw.forEach(r => { const t=(r['Tester']||'').trim(); if(t) found.add(t); });
+
+  const hadSavedTesters = localStorage.getItem('qa_allTesters') !== null;
+  const hadSavedActive  = localStorage.getItem('qa_activeTesters') !== null;
+
+  // Add genuinely new testers to ALL_TESTERS
+  let hasNew = false;
+  found.forEach(t => { if(!ALL_TESTERS.includes(t)){ ALL_TESTERS.push(t); hasNew=true; } });
+  if(hasNew) ALL_TESTERS.sort();
+
+  // Only auto-activate new testers if user has saved preferences — don't override existing
+  if(hadSavedActive){
+    // Only add brand-new testers (not in saved list at all) to activeTesters
+    ALL_TESTERS.forEach(t => {
+      const isNew = !hadSavedTesters || !JSON.parse(localStorage.getItem('qa_allTesters')||'[]').includes(t);
+      if(isNew && !activeTesters.includes(t)) activeTesters.push(t);
+    });
+  } else {
+    // First time — activate everyone
+    ALL_TESTERS.forEach(t => { if(!activeTesters.includes(t)) activeTesters.push(t); });
+  }
+
+  REGULAR_TESTERS = ALL_TESTERS.filter(t=>!WEEKEND_TESTERS.includes(t));
+  saveTesterSettings();
+}
+const CUTOFF_YEAR=2026, CUTOFF_MONTH=3;
+const AVATAR_COLORS=['#0ea5e9','#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#84cc16','#f97316','#ec4899','#14b8a6','#6366f1','#a855f7','#38bdf8'];
+const MONTHS=['','January','February','March','April','May','June','July','August','September','October','November','December'];
+const REASON_COLORS={
+  'Game Update':   '#e8521a',  // orange-red
+  'New Trainer':   '#0ea5e9',  // teal-blue
+  'Prerelease':    '#7c3aed',  // purple
+  'Copied Trainer':'#16a34a',  // green
+  'Support':       '#dc2626',  // dark red
+  'User Feedback': '#ef4444',  // bright red
+  'No Recent Test':'#b45309',  // dark amber
+  'Other':         '#6b7280'   // grey
+};
+const ERR_TYPES=['False Negative','False Positive','Human Error'];
+const ERR_COLORS=['#0ea5e9','#ef4444','#f59e0b'];
+const PAGE_TITLES={weekly:'Weekly Tracker',individual:'Individual View',claims:'Support Claims Tracker',trends:'Game Trends',errors:'Reporting Errors',insights:'Tester Insights',daily:'Daily Tracker',export:'Export Report',settings:'Settings'};
+const CLAIM_STATUSES=['In Queue','To be Added','Confirmed User Complaint','Rejected User Complaint','Need something from Support','Support claim redundant','Tested but no report'];
+const CLAIM_COLORS={'In Queue':'#3b82f6','To be Added':'#0ea5e9','Confirmed User Complaint':'#eab308','Rejected User Complaint':'#ef4444','Need something from Support':'#f97316','Support claim redundant':'#8b5cf6','Tested but no report':'#22c55e'};
+const CLAIM_SHORT={'In Queue':'In Queue','To be Added':'To be Added','Confirmed User Complaint':'Confirmed','Rejected User Complaint':'Rejected','Need something from Support':'Needs Support','Support claim redundant':'Redundant','Tested but no report':'Tested/No Report'};
+
+// ── STATE ──
+let weeklyDataRegular={}, weeklyDataWeekend={}, historyRaw=[], qualityRaw=[], claimsRaw=[];
+// targetsMap[year][week][tester] = target number (from CSV, overrides default)
+let targetsMap={};
+// Public roster from CSV: rosterMap[tester] = {active, shift, target}
+let rosterMap = {};
+let rosterLoaded = false;
+
+function parseRosterCSV(text){
+  const rows = parseCSV(text);
+  const map = {};
+  rows.forEach(r => {
+    const tester = (r['Tester']||r['tester']||'').trim();
+    if(!tester) return;
+    const active = /^y/i.test((r['Active']||r['active']||'').trim());
+    const shift = /weekend/i.test((r['Shift']||r['shift']||'').trim()) ? 'weekend' : 'regular';
+    const target = parseFloat(r['Target']||r['target']||36)||36;
+    map[tester] = { active, shift, target };
+  });
+  return map;
+}
+
+function isPublicMode(){
+  return new URLSearchParams(window.location.search).get('view') === 'public';
+}
+// customTargets: manual overrides by user in the UI
+let customTargets=JSON.parse(localStorage.getItem('qa_customTargets')||'{}');
+function saveCustomTargets(){localStorage.setItem('qa_customTargets',JSON.stringify(customTargets));}
+let currentShift='regular', indShift='regular';
+let chartTrReason=null, chartTrPts=null, chartTrFreq=null, chartErr=null;
+
+function avatarColor(n){const i=ALL_TESTERS.indexOf(n);return AVATAR_COLORS[i>=0?i%AVATAR_COLORS.length:Math.abs((n.charCodeAt(0)||0)%AVATAR_COLORS.length)];}
+function initials(n){return n.replace(/[^A-Za-z]/g,'').slice(0,2).toUpperCase();}
+function getWeekLabel(w,y){
+  const d=new Date(y,0,1+(w-1)*7);
+  const mon=d.toLocaleString('default',{month:'long'});
+  const wom=Math.ceil(d.getDate()/7);
+  const ords=['1st','2nd','3rd','4th','5th'];
+  return `${mon} · ${ords[wom-1]||wom+'th'} week · Week ${w}, ${y}`;
+}
+function getWeekendLabel(w,y){
+  const d=new Date(y,0,1+(w-1)*7);
+  // Thu of week w
+  const thu=new Date(d); thu.setDate(thu.getDate()+3-(thu.getDay()||7)+1);
+  // Tue of week w+1
+  const d2=new Date(y,0,1+w*7);
+  const tue=new Date(d2); tue.setDate(tue.getDate()-((tue.getDay()+4)%7));
+  const fmt=dt=>dt.toLocaleString('default',{month:'short',day:'numeric'});
+  return `Weekend Shift · ${fmt(thu)} – ${fmt(tue)} · Week ${w}, ${y}`;
+}
+
+// ── STATUS ──
+function setStatus(html){document.getElementById('global-status').innerHTML=html||'';}
+function showLoading(msg){setStatus(`<div class="status-banner status-loading"><span class="spinner"></span>${msg}</div>`);}
+function showError(msg){setStatus(`<div class="status-banner status-error"><strong>Error:</strong> ${msg}</div>`);}
+function clearStatus(){setStatus('');}
+
+// ── CSV ──
+function splitCSVLine(line){
+  const res=[];let cur='',inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'&&!inQ)inQ=true;
+    else if(c==='"'&&inQ&&line[i+1]==='"'){cur+='"';i++;}
+    else if(c==='"'&&inQ)inQ=false;
+    else if(c===','&&!inQ){res.push(cur);cur='';}
+    else cur+=c;
+  }
+  res.push(cur);
+  return res.map(s=>s.trim().replace(/^"|"$/g,''));
+}
+function parseCSV(text){
+  const lines=text.trim().split('\n');
+  if(!lines.length)return[];
+  const headers=splitCSVLine(lines[0]);
+  return lines.slice(1).map(line=>{
+    const vals=splitCSVLine(line);
+    const obj={};
+    headers.forEach((h,i)=>{obj[h]=(vals[i]||'').trim();});
+    return obj;
+  }).filter(r=>Object.values(r).some(v=>v));
+}
+
+// Parse the stacked targets CSV format:
+// "Week 10",COUNTA,...,Target
+// tester, count, pts, target
+// ...blank...
+// "Week 11",...
+function parseTargetsCSV(text){
+  const map={};
+  const lines=text.trim().split('\n');
+  let currentWeek=null, currentYear=2026;
+  lines.forEach(line=>{
+    const cols=splitCSVLine(line);
+    if(!cols[0])return;
+    // Detect week header like "Week 10"
+    const wm=cols[0].match(/^Week\s+(\d+)$/i);
+    if(wm){currentWeek=parseInt(wm[1]);return;}
+    // Detect year if present (future-proofing)
+    if(!currentWeek)return;
+    const tester=cols[0].trim();
+    const target=cols[3]?parseFloat(cols[3]):null;
+    if(!tester||tester==='COUNTA of Game Title'||tester==='SUM of Test Value'||tester==='Target')return;
+    if(target===null||isNaN(target))return;
+    if(!map[currentYear])map[currentYear]={};
+    if(!map[currentYear][currentWeek])map[currentYear][currentWeek]={};
+    map[currentYear][currentWeek][tester]=target;
+  });
+  return map;
+}
+
+async function fetchCSV(url){
+  const r=await fetch(url+'&_t='+Date.now());
+  if(!r.ok)throw new Error(`HTTP ${r.status}`);
+  return r.text();
+}
+
+function detectDelimiter(text){
+  const firstLine=text.split('\n')[0];
+  const tabs=firstLine.split('\t').length-1;
+  const commas=firstLine.split(',').length-1;
+  return tabs>commas?'\t':',';
+}
+
+function parseCSVorTSV(text){
+  const delim=detectDelimiter(text);
+  const lines=text.trim().split('\n');
+  if(!lines.length)return[];
+  const headers=lines[0].split(delim).map(h=>h.trim().replace(/^"|"$/g,''));
+  return lines.slice(1).map(line=>{
+    let vals;
+    if(delim==='\t'){
+      vals=line.split('\t').map(s=>s.trim().replace(/^"|"$/g,''));
+    } else {
+      vals=splitCSVLine(line);
+    }
+    const obj={};
+    headers.forEach((h,i)=>{obj[h]=(vals[i]||'').trim();});
+    return obj;
+  }).filter(r=>Object.values(r).some(v=>v));
+}
+
+// ── PROCESS HISTORY ──
+function getTarget(tester,week,year){
+  // Public mode: target comes straight from roster CSV
+  if(isPublicMode() && rosterLoaded && rosterMap[tester]){
+    return rosterMap[tester].target;
+  }
+  // 1. User-edited override
+  const key=`${year}_${tester}_${week}`;
+  if(customTargets[key]!==undefined)return customTargets[key];
+  // 2. From targets CSV
+  if(targetsMap[year]&&targetsMap[year][week]&&targetsMap[year][week][tester]!==undefined)
+    return targetsMap[year][week][tester];
+  // 3. Default
+  return 36;
+}
+
+function processHistory(){
+  weeklyDataRegular={};
+  weeklyDataWeekend={};
+
+  // Build weekend lookup: for each raw row that belongs to a weekend tester,
+  // figure out which "custom week" it belongs to.
+  // weekendAssign[year][week][tester] = pts
+  const weekendAssign={};
+
+  historyRaw.forEach(r=>{
+    const tester=(r['Tester']||'').trim();
+    const week=parseInt(r['Week']||r['week']);
+    const year=parseInt(r['Year']||r['year']);
+    const pts=parseFloat(r['Test Value']||0)||0;
+    const month=parseInt(r['Month']||r['month']);
+    const dayOrder=parseInt(r['Day Order']||r['day_order']||0);
+    if(!tester||isNaN(week)||isNaN(year)||isNaN(pts))return;
+
+    // Tester filter from cutoff
+    const afterCutoff=(year>CUTOFF_YEAR)||(year===CUTOFF_YEAR&&month>=CUTOFF_MONTH);
+    if(afterCutoff&&!ALL_TESTERS.includes(tester))return;
+
+    const isWeekendTester=WEEKEND_TESTERS.includes(tester);
+    const useWeekendLogic=isWeekendTester&&week>=WEEKEND_CUTOFF_WEEK&&year>=2026;
+
+    if(useWeekendLogic){
+      // Determine which custom week this row belongs to
+      let customWeek=null;
+      if(WEEKEND_DAYS_CURRENT.includes(dayOrder)){
+        // Day orders 5,6,7 → belongs to this calendar week
+        customWeek=week;
+      } else if(WEEKEND_DAYS_NEXT.includes(dayOrder)){
+        // Day orders 1,2,3 → belongs to the PREVIOUS calendar week (week-1)
+        customWeek=week-1;
+        if(customWeek<WEEKEND_CUTOFF_WEEK)customWeek=null; // before cutoff, skip
+      }
+      if(customWeek===null)return;
+      if(!weekendAssign[year])weekendAssign[year]={};
+      if(!weekendAssign[year][customWeek])weekendAssign[year][customWeek]={};
+      if(!weekendAssign[year][customWeek][tester])weekendAssign[year][customWeek][tester]=0;
+      weekendAssign[year][customWeek][tester]=Math.round((weekendAssign[year][customWeek][tester]+pts)*100)/100;
+    } else {
+      // Regular tester (or weekend tester before cutoff) → goes into regular data
+      if(!weeklyDataRegular[year])weeklyDataRegular[year]={};
+      if(!weeklyDataRegular[year][week])weeklyDataRegular[year][week]={};
+      if(!weeklyDataRegular[year][week][tester])weeklyDataRegular[year][week][tester]={p:0};
+      weeklyDataRegular[year][week][tester].p=Math.round((weeklyDataRegular[year][week][tester].p+pts)*100)/100;
+    }
+  });
+
+  // Move weekend assign into weeklyDataWeekend with targets
+  Object.keys(weekendAssign).forEach(yr=>{
+    const y=parseInt(yr);
+    if(!weeklyDataWeekend[y])weeklyDataWeekend[y]={};
+    Object.keys(weekendAssign[y]).forEach(wk=>{
+      const w=parseInt(wk);
+      if(!weeklyDataWeekend[y][w])weeklyDataWeekend[y][w]={};
+      Object.keys(weekendAssign[y][w]).forEach(tester=>{
+        weeklyDataWeekend[y][w][tester]={p:weekendAssign[y][w][tester]};
+      });
+    });
+  });
+
+  // Targets are always resolved live via getTarget() at render time
+
+  // Mark latest week as live in both datasets
+  [weeklyDataRegular, weeklyDataWeekend].forEach(wd=>{
+    const years=Object.keys(wd).map(Number).sort((a,b)=>b-a);
+    if(years.length){
+      const ly=years[0],lw=Math.max(...Object.keys(wd[ly]).map(Number));
+      Object.values(wd[ly][lw]).forEach(t=>t.live=true);
+    }
+  });
+}
+
+// ── LOAD ──
+async function loadAllData(){
+  showLoading('Fetching live data from Google Sheets…');
+  document.getElementById('live-label').textContent='Loading…';
+  try{
+    const [histText,qualText,targText,claimsText,rosterText]=await Promise.all([
+      fetchCSV(URL_HISTORY),
+      fetchCSV(URL_QUALITY),
+      fetchCSV(URL_TARGETS),
+      fetchCSV(URL_SUPPORT),
+      fetchCSV(URL_ROSTER).catch(()=>'')
+    ]);
+    historyRaw=parseCSV(histText);
+    // Parse roster (used by public mode)
+    if(rosterText){ rosterMap = parseRosterCSV(rosterText); rosterLoaded = Object.keys(rosterMap).length>0; }
+    applyRosterIfPublic();
+    deriveTesterList();
+    deriveTesterList();
+    qualityRaw=parseCSV(qualText);
+    targetsMap=parseTargetsCSV(targText);
+    // Split CSV respecting quoted multiline fields, then index by column
+    // Col B=1 Game Title, Col E=4 Discord Date, Col K=10 Claim Status
+    function splitCSVRows(text) {
+      const rows = [];
+      let cur = '', inQ = false;
+      for(let i=0; i<text.length; i++){
+        const c = text[i];
+        if(c==='"' && !inQ){ inQ=true; }
+        else if(c==='"' && inQ && text[i+1]==='"'){ cur+='"'; i++; }
+        else if(c==='"' && inQ){ inQ=false; }
+        else if((c==='\n') && !inQ){ rows.push(cur); cur=''; }
+        else { cur+=c; }
+      }
+      if(cur) rows.push(cur);
+      return rows;
+    }
+    const claimsRows = splitCSVRows(claimsText);
+    const parsedClaims = [];
+    for(let i=1; i<claimsRows.length; i++){
+      const cols = splitCSVLine(claimsRows[i]);
+      const gameTitle = (cols[1]||'').trim();
+      const discordDate = (cols[4]||'').trim();
+      const claimStatus = (cols[10]||'').trim();
+      if(!gameTitle || !discordDate || !claimStatus) continue;
+      if(claimStatus === 'Link' || gameTitle === 'Link') continue;
+      const d = parseClaimDate(discordDate);
+      if(!d || d < new Date(2026, 2, 1)) continue;
+      parsedClaims.push({
+        'Game Title': gameTitle,
+        'Discord / Slack Thread Date': discordDate,
+        'Claim Status': claimStatus,
+      });
+    }
+    claimsRaw = parsedClaims;
+    console.log('[Claims] rows:', claimsRaw.length);
+    if(!historyRaw.length)throw new Error('Test History sheet returned no rows.');
+    processHistory();
+    initUI();
+    const now=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('live-label').textContent='Live · '+now;
+    document.getElementById('last-updated').textContent='Updated '+now;
+  updateFooter();
+    clearStatus();
+  }catch(e){
+    document.getElementById('live-label').textContent='Error';
+    showError(e.message+' — Click Refresh data or check your sheets are published.');
+    console.error(e);
+  }
+}
+
+// ── INIT UI ──
+function initUI(){
+  const regYears=Object.keys(weeklyDataRegular).map(Number).sort((a,b)=>b-a);
+  const wkYears=Object.keys(weeklyDataWeekend).map(Number).sort((a,b)=>b-a);
+  const allYears=[...new Set([...regYears,...wkYears])].sort((a,b)=>b-a);
+
+  ['wk-year','tr-year','ins-year'].forEach(id=>{
+    const s=document.getElementById(id);s.innerHTML='';
+    allYears.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;s.appendChild(o);});
+    s.value=allYears[0];
+  });
+  populateWkWeekSelect(allYears[0]);
+  populateWeekSelect('tr-week',allYears[0],weeklyDataRegular);
+  populateWeekSelect('ins-week',allYears[0],weeklyDataRegular);
+
+  ['tr-tester','ins-tester'].forEach(id=>{
+    const s=document.getElementById(id);
+    while(s.options.length>(id==='tr-tester'?1:0))s.remove(id==='tr-tester'?1:0);
+    if(id==='ins-tester')s.innerHTML='';
+    ALL_TESTERS.filter(t=>activeTesters.includes(t)).forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t+(WEEKEND_TESTERS.includes(t)?' ☽':'');s.appendChild(o);});
+  });
+
+  const errYears=[...new Set(qualityRaw.map(r=>parseInt(r['Year']||r['year'])).filter(y=>!isNaN(y)))].sort((a,b)=>a-b);
+  const errMonths=[...new Set(qualityRaw.map(r=>parseInt(r['Month']||r['month'])).filter(m=>!isNaN(m)))].sort((a,b)=>a-b);
+  const eSel=document.getElementById('err-year');eSel.innerHTML='';
+  errYears.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;eSel.appendChild(o);});
+  eSel.value=errYears[errYears.length-1];
+  const mSel=document.getElementById('err-month');mSel.innerHTML='';
+  errMonths.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=MONTHS[m]||m;mSel.appendChild(o);});
+  mSel.value=errMonths[errMonths.length-1];
+  document.getElementById('err-legend').innerHTML=ERR_TYPES.map((t,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${ERR_COLORS[i]}"></div>${t}</div>`).join('');
+
+  renderWeekly();
+  renderIndividual();
+  initClaims();
+  renderTrends();
+  renderErrors();
+  renderInsights();
+}
+
+function populateWeekSelect(selId,year,wd){
+  const sel=document.getElementById(selId);
+  const wks=Object.keys((wd||weeklyDataRegular)[year]||{}).map(Number).sort((a,b)=>a-b);
+  sel.innerHTML='';
+  wks.forEach(w=>{const o=document.createElement('option');o.value=w;o.textContent='Week '+w;sel.appendChild(o);});
+  if(wks.length)sel.value=wks[wks.length-1];
+}
+
+function populateWkWeekSelect(year){
+  if(currentShift==='regular'){
+    populateWeekSelect('wk-week',year,weeklyDataRegular);
+  } else {
+    // For weekend shift, show all weeks from WEEKEND_CUTOFF_WEEK onwards
+    // using union of regular + weekend weeks so no weeks are missing
+    const regWks = Object.keys(weeklyDataRegular[year]||{}).map(Number);
+    const wndWks = Object.keys(weeklyDataWeekend[year]||{}).map(Number);
+    const allWks = [...new Set([...regWks,...wndWks])].filter(w=>w>=WEEKEND_CUTOFF_WEEK).sort((a,b)=>a-b);
+    const sel = document.getElementById('wk-week');
+    sel.innerHTML='';
+    allWks.forEach(w=>{const o=document.createElement('option');o.value=w;o.textContent='Week '+w;sel.appendChild(o);});
+    if(allWks.length) sel.value=allWks[allWks.length-1];
+  }
+}
+
+// ── SHIFT TOGGLE ──
+function setShift(shift){
+  currentShift=shift;
+  document.getElementById('toggle-regular').className='toggle-btn'+(shift==='regular'?' active':'');
+  document.getElementById('toggle-weekend').className='toggle-btn'+(shift==='weekend'?' active-weekend':'');
+  document.getElementById('weekend-note').style.display=shift==='weekend'?'flex':'none';
+  const year=parseInt(document.getElementById('wk-year').value);
+  populateWkWeekSelect(year);
+  renderWeekly();
+}
+function setIndShift(shift){
+  indShift=shift;
+  document.getElementById('ind-toggle-regular').className='toggle-btn'+(shift==='regular'?' active':'');
+  document.getElementById('ind-toggle-weekend').className='toggle-btn'+(shift==='weekend'?' active-weekend':'');
+  renderIndividual();
+}
+
+function switchPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('topbar-title').textContent=PAGE_TITLES[id];
+  if(id==='daily'){ initDailyControls(); renderDaily(); }
+  if(id==='export') initExport();
+  if(id==='settings') initSettings();
+}
+
+function onWkYearChange(){
+  populateWkWeekSelect(parseInt(document.getElementById('wk-year').value));
+  renderWeekly();
+}
+function onTrYearChange(){populateWeekSelect('tr-week',parseInt(document.getElementById('tr-year').value),weeklyDataRegular);renderTrends();}
+function onInsYearChange(){populateWeekSelect('ins-week',parseInt(document.getElementById('ins-year').value),weeklyDataRegular);renderInsights();}
+
+// ── WEEKLY ──
+function renderWeekly(){
+  const year=parseInt(document.getElementById('wk-year').value);
+  const week=parseInt(document.getElementById('wk-week').value);
+  const wd=currentShift==='regular'?weeklyDataRegular:weeklyDataWeekend;
+  const testers=(currentShift==='regular'?REGULAR_TESTERS:WEEKEND_TESTERS).filter(t=>activeTesters.includes(t));
+  const data=(wd[year]||{})[week]||{};
+  const isWeekend=currentShift==='weekend';
+  const isLive=Object.values(data).some(r=>r.live);
+
+  document.getElementById('wk-table-title').textContent=`Points tracker — ${isWeekend?'Weekend shift':'Regular testers'}`;
+  document.getElementById('wk-banner').innerHTML=`
+    <div><div class="week-banner-text">${isWeekend?getWeekendLabel(week,year):getWeekLabel(week,year)}</div>
+    <div class="week-banner-sub">${isLive?'Week in progress — points updating live':'Completed week'}</div></div>
+    ${isLive?'<div class="live-badge"><div class="live-dot"></div>Live</div>':''}`;
+
+  // Only show testers relevant to this shift
+  const filteredData={};
+  testers.forEach(t=>{if(data[t])filteredData[t]=data[t];});
+
+  // Combined stats across BOTH shifts for the selected week/year
+  const regData=(weeklyDataRegular[year]||{})[week]||{};
+  const wkndData=(weeklyDataWeekend[year]||{})[week]||{};
+
+  // Total points — all testers both shifts
+  let combinedTotalPts=0;
+  ALL_TESTERS.filter(t=>activeTesters.includes(t)).forEach(t=>{
+    const regRow=regData[t]; const wkRow=wkndData[t];
+    if(regRow) combinedTotalPts+=regRow.p;
+    else if(wkRow) combinedTotalPts+=wkRow.p;
+  });
+  combinedTotalPts=Math.round(combinedTotalPts*100)/100;
+
+  // Target points — sum of all targets both shifts
+  let combinedTotalTarget=0;
+  ALL_TESTERS.filter(t=>activeTesters.includes(t)).forEach(t=>{
+    combinedTotalTarget+=getTarget(t,week,year);
+  });
+
+  // Points still needed to reach combined target
+  const stillNeeded=Math.max(0,combinedTotalTarget-combinedTotalPts);
+
+  // Average points per tester across both shifts (only testers with data)
+  const testersWithData=ALL_TESTERS.filter(t=>regData[t]||wkndData[t]);
+  const avgPtsCombined=testersWithData.length?(combinedTotalPts/testersWithData.length).toFixed(1):0;
+
+  document.getElementById('wk-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total points</div><div class="stat-value c-accent">${combinedTotalPts}</div><div class="stat-sub">all ${testersWithData.length} active testers</div></div>
+    <div class="stat-card"><div class="stat-label">Target points</div><div class="stat-value" style="color:var(--text2)">${combinedTotalTarget}</div><div class="stat-sub">combined team target</div></div>
+    <div class="stat-card"><div class="stat-label">Still needed</div><div class="stat-value ${stillNeeded===0?'c-green':'c-yellow'}">${stillNeeded}</div><div class="stat-sub">${stillNeeded===0?'target reached':'to hit team target'}</div></div>
+    <div class="stat-card"><div class="stat-label">Avg per tester</div><div class="stat-value c-accent">${avgPtsCombined}</div><div class="stat-sub">incl. weekend shift</div></div>`;
+
+  const tbody=document.getElementById('wk-body');tbody.innerHTML='';
+  // Show all relevant testers, even those with no data yet (0 pts)
+  testers.forEach(tester=>{
+    const row=filteredData[tester]||{p:0,live:isLive};
+    const key=`${year}_${tester}_${week}`;
+    const target=customTargets[key]!==undefined?customTargets[key]:getTarget(tester,week,year);
+    const pts=row.p,pct=target>0?Math.min(100,Math.round(pts/target*100)):0;
+    const remaining=target>0?Math.max(0,target-pts).toFixed(2):'—';
+    const barC=pts>=target?'var(--green)':row.live?'var(--blue)':pts>=target*0.9?'var(--yellow)':'var(--red)';
+    const badge=target===0?'<span class="badge badge-none">No target</span>':pts>=target?'<span class="badge badge-hit">✓ Hit</span>':row.live?'<span class="badge badge-live">In progress</span>':pts>=target*0.9?'<span class="badge badge-close">~ Close</span>':'<span class="badge badge-miss">✗ Missed</span>';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><div class="tester-name"><div class="avatar" style="background:${avatarColor(tester)}">${initials(tester)}</div>${tester}</div></td>
+      <td><span class="pts-cell">${pts}</span></td><td style="color:var(--text2)">${target}</td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div class="progress-wrap" style="flex:1"><div class="progress-bar" style="width:${pct}%;background:${barC}"></div></div><span style="font-size:11px;color:var(--text3);min-width:28px">${pct}%</span></div></td>
+      <td style="color:var(--text3)">${remaining}</td>
+      <td style="color:${pts>target&&target>0?'var(--green)':'var(--text3)'}">${pts>target&&target>0?'+'+(pts-target).toFixed(2):'—'}</td>
+      <td>${badge}</td>
+      <td><input class="target-input" type="number" value="${target}" onchange="customTargets['${key}']=parseFloat(this.value)||0;saveCustomTargets();renderWeekly();renderIndividual()"></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── INDIVIDUAL ──
+function getAllRowsForTester(tester){
+  const isWeekend=WEEKEND_TESTERS.includes(tester);
+  const rows=[];
+  const checkWd=(wd)=>{
+    Object.keys(wd).map(Number).sort((a,b)=>a-b).forEach(yr=>{
+      Object.keys(wd[yr]).map(Number).sort((a,b)=>a-b).forEach(wk=>{
+        if(wd[yr][wk][tester])rows.push({week:wk,year:yr,...wd[yr][wk][tester],isWeekend:true});
+      });
+    });
+  };
+  // For weekend testers, use weekend data from week 16+; regular data before that
+  if(isWeekend){
+    // Regular data (pre-cutoff weeks)
+    Object.keys(weeklyDataRegular).map(Number).sort((a,b)=>a-b).forEach(yr=>{
+      Object.keys(weeklyDataRegular[yr]).map(Number).sort((a,b)=>a-b).forEach(wk=>{
+        if(weeklyDataRegular[yr][wk][tester]&&!(yr>=2026&&wk>=WEEKEND_CUTOFF_WEEK))
+          rows.push({week:wk,year:yr,...weeklyDataRegular[yr][wk][tester],isWeekend:false});
+      });
+    });
+    checkWd(weeklyDataWeekend);
+  } else {
+    Object.keys(weeklyDataRegular).map(Number).sort((a,b)=>a-b).forEach(yr=>{
+      Object.keys(weeklyDataRegular[yr]).map(Number).sort((a,b)=>a-b).forEach(wk=>{
+        if(weeklyDataRegular[yr][wk][tester])rows.push({week:wk,year:yr,...weeklyDataRegular[yr][wk][tester],isWeekend:false});
+      });
+    });
+  }
+  return rows.sort((a,b)=>a.year!==b.year?a.year-b.year:a.week-b.week);
+}
+
+function renderIndividual(){
+  const grid=document.getElementById('ind-grid');grid.innerHTML='';
+  const testers=(indShift==='regular'?REGULAR_TESTERS:WEEKEND_TESTERS).filter(t=>activeTesters.includes(t));
+  testers.forEach(tester=>{
+    const rows=getAllRowsForTester(tester);if(!rows.length)return;
+    const card=document.createElement('div');card.className='tester-card';
+    const rowsHtml=rows.slice(-8).map(r=>{
+      const dynTarget=getTarget(r.tester||tester,r.week,r.year);
+      const pct=dynTarget>0?Math.min(100,Math.round(r.p/dynTarget*100)):0;
+      const barC=r.p>=dynTarget?'var(--green)':r.live?'var(--blue)':r.p>=dynTarget*0.9?'var(--yellow)':'var(--red)';
+      const iconC=r.p>=dynTarget?'var(--green)':r.live?'var(--blue)':r.p>=dynTarget*0.9?'var(--yellow)':'var(--red)';
+      const icon=dynTarget===0?'—':r.p>=dynTarget?'✓':r.live?'…':'✗';
+      const wkLabel=`Wk${r.week}'${String(r.year).slice(2)}${r.isWeekend?' ☽':''}`;
+      return `<tr><td style="color:var(--text3)">${wkLabel}</td><td style="font-weight:700">${r.p}</td><td style="color:var(--text3)">${dynTarget}</td>
+        <td><div style="display:flex;align-items:center;gap:6px"><div class="progress-wrap" style="width:48px"><div class="progress-bar" style="width:${pct}%;background:${barC}"></div></div><span style="color:${iconC};font-size:12px;font-weight:700">${icon}</span></div></td></tr>`;
+    }).join('');
+    const wkBadge=WEEKEND_TESTERS.includes(tester)?'<span style="font-size:10px;color:var(--orange);background:var(--orange-bg);border:1px solid rgba(249,115,22,.2);padding:2px 6px;border-radius:10px;margin-left:6px">Weekend</span>':'';
+    card.innerHTML=`<div class="tester-card-header"><div class="tester-card-name"><div class="avatar" style="background:${avatarColor(tester)}">${initials(tester)}</div>${tester}${wkBadge}</div><span style="font-size:11px;color:var(--text3)">${rows.length} weeks</span></div>
+      <div class="tester-card-body"><table><thead><tr><th>Week</th><th>Pts</th><th>Target</th><th>Progress</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ── TRENDS ──
+function renderTrends(){
+  const year=parseInt(document.getElementById('tr-year').value);
+  const week=parseInt(document.getElementById('tr-week').value);
+  const testerFilter=document.getElementById('tr-tester').value;
+  let rows=historyRaw.filter(r=>parseInt(r['Week']||r['week'])===week&&parseInt(r['Year']||r['year'])===year);
+  if(testerFilter!=='ALL')rows=rows.filter(r=>(r['Tester']||'').trim()===testerFilter);
+  const gamePts={},gameCnt={};
+  rows.forEach(r=>{
+    const g=(r['Game Title']||'').replace(/\s*\(.*?\)\s*/g,'').trim();
+    const p=parseFloat(r['Test Value']||0)||0;
+    if(!g)return;
+    gamePts[g]=(gamePts[g]||0)+p;gameCnt[g]=(gameCnt[g]||0)+1;
+  });
+  const topGames=Object.entries(gamePts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const gl=document.getElementById('tr-games-list');
+  gl.innerHTML=topGames.length?topGames.map(([g,p],i)=>`<div class="top-list-item"><span class="top-list-rank">${i+1}</span><span class="top-list-name" title="${g}">${g}</span><span class="top-list-val">${p.toFixed(2)} pts</span><span style="font-size:11px;color:var(--text3);margin-left:8px">(${gameCnt[g]})</span></div>`).join('')
+    :'<div style="padding:20px 16px;color:var(--text3);font-size:13px">No data for this selection.</div>';
+  const reasonPts={},reasonCnt={};
+  rows.forEach(r=>{
+    const rs=(r['Reason']||'Other').trim()||'Other';
+    const p=parseFloat(r['Test Value']||0)||0;
+    reasonPts[rs]=(reasonPts[rs]||0)+p;reasonCnt[rs]=(reasonCnt[rs]||0)+1;
+  });
+  const reasons=Object.keys(reasonPts).sort((a,b)=>reasonPts[b]-reasonPts[a]);
+  const rColors=reasons.map(r=>REASON_COLORS[r]||'#888');
+  const rVals=reasons.map(r=>Math.round(reasonPts[r]*100)/100);
+  if(chartTrReason)chartTrReason.destroy();
+  document.getElementById('tr-legend').innerHTML=reasons.map((r,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${rColors[i]}"></div>${r}: ${rVals[i]} pts</div>`).join('');
+  if(reasons.length){
+    chartTrReason=new Chart(document.getElementById('tr-reason-chart'),{
+      type:'doughnut',
+      data:{labels:reasons,datasets:[{data:rVals,backgroundColor:rColors,borderWidth:2,borderColor:'#1c1c1c'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{
+        legend:{position:'right',labels:{color:'#f0f0f0',font:{family:'Arial',size:11},padding:12,boxWidth:12,
+          generateLabels:chart=>chart.data.labels.map((l,i)=>({
+            text:`${l}: ${rVals[i]} pts`,fillStyle:rColors[i],strokeStyle:'#1c1c1c',lineWidth:2,index:i,
+            fontColor:'#f0f0f0'
+          }))
+        }},
+        tooltip:{backgroundColor:'#1c1c1c',borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleColor:'#f0f0f0',bodyColor:'#f0f0f0',padding:10,
+          callbacks:{label:item=>`${item.label}: ${rVals[item.dataIndex]} pts (${reasonCnt[reasons[item.dataIndex]]} tests)`}
+        }
+      }}
+    });
+  }
+  if(chartTrPts)chartTrPts.destroy();
+
+  // Points frequency — count how many games per point value
+  const freqMap={};
+  rows.forEach(r=>{
+    const p=parseFloat(r['Test Value']||0)||0;
+    if(!p)return;
+    // Round to 2 decimal places to group nicely
+    const key=Math.round(p*100)/100;
+    freqMap[key]=(freqMap[key]||0)+1;
+  });
+  const freqLabels=Object.keys(freqMap).map(Number).sort((a,b)=>a-b);
+  const freqVals=freqLabels.map(k=>freqMap[k]);
+  if(chartTrFreq)chartTrFreq.destroy();
+  if(freqLabels.length){
+    chartTrFreq=new Chart(document.getElementById('tr-freq-chart'),{
+      type:'bar',
+      data:{
+        labels:freqLabels.map(l=>l+' pt'+(l===1?'':'s')),
+        datasets:[{
+          label:'Games tested',
+          data:freqVals,
+          backgroundColor:'#3b82f6bb',
+          hoverBackgroundColor:'#3b82f6',
+          borderRadius:6,
+          borderSkipped:false
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            backgroundColor:'#1c1c1c',borderColor:'rgba(255,255,255,.1)',borderWidth:1,
+            titleColor:'#f0f0f0',bodyColor:'#888',padding:10,
+            callbacks:{
+              title:items=>`${items[0].label}`,
+              label:item=>`${item.raw} game${item.raw===1?'':'s'} tested`
+            }
+          }
+        },
+        scales:{
+          y:{beginAtZero:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#555',font:{family:'Arial',size:11},stepSize:1}},
+          x:{grid:{display:false},ticks:{color:'#888',font:{family:'Arial',size:11}}}
+        }
+      }
+    });
+  }
+}
+
+// ── ERRORS ──
+function renderErrors(){
+  const month=parseInt(document.getElementById('err-month').value);
+  const year=parseInt(document.getElementById('err-year').value);
+  const getTester=r=>(r['Tester']||r['tester']||'').trim();
+  const getType=r=>(r['Type of Error']||r['type_of_error']||r['Error Type']||'').trim();
+  const filtered=qualityRaw.filter(r=>parseInt(r['Month']||r['month'])===month&&parseInt(r['Year']||r['year'])===year);
+  const testers=[...new Set(filtered.map(getTester).filter(Boolean))].sort();
+  const datasets=ERR_TYPES.map((type,i)=>({label:type,data:testers.map(t=>filtered.filter(r=>getTester(r)===t&&getType(r)===type).length),backgroundColor:ERR_COLORS[i]+'cc',hoverBackgroundColor:ERR_COLORS[i],borderRadius:4,borderSkipped:false}));
+  if(chartErr)chartErr.destroy();
+  const h=Math.max(280,testers.length*52+80);
+  document.getElementById('err-chart-wrap').style.height=h+'px';
+  chartErr=new Chart(document.getElementById('errors-chart'),{type:'bar',data:{labels:testers,datasets},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1c1c1c',borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleColor:'#f0f0f0',bodyColor:'#888',padding:10}},
+    scales:{x:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#555',font:{family:'Arial',size:11},stepSize:1}},y:{stacked:true,ticks:{color:'#888',font:{family:'Arial',size:12}},grid:{display:false}}}}});
+}
+
+// ── INSIGHTS ──
+function renderInsights(){
+  const tester=document.getElementById('ins-tester').value;
+  const year=parseInt(document.getElementById('ins-year').value);
+  const week=parseInt(document.getElementById('ins-week').value);
+  const isWknd=WEEKEND_TESTERS.includes(tester)&&week>=WEEKEND_CUTOFF_WEEK&&year>=2026;
+  const wd=isWknd?weeklyDataWeekend:weeklyDataRegular;
+  const cur=((wd[year]||{})[week]||{})[tester];
+  const pts=cur?cur.p:0,tgt=getTarget(tester,week,year),isLive=cur&&cur.live;
+  const pct=tgt>0?Math.min(100,Math.round(pts/tgt*100)):0;
+  const remaining=tgt>0?Math.max(0,tgt-pts).toFixed(2):0;
+  const allRows=getAllRowsForTester(tester);
+  const completed=allRows.filter(r=>!r.live&&r.t>0);
+  const hitCount=completed.filter(r=>r.p>=r.t).length;
+  const avgPts=allRows.length?(allRows.reduce((s,r)=>s+r.p,0)/allRows.length).toFixed(1):0;
+  const bestWk=allRows.length?Math.max(...allRows.map(r=>r.p)):0;
+  const barC=pts>=tgt?'var(--green)':isLive?'var(--blue)':pts>=tgt*0.9?'var(--yellow)':'var(--red)';
+  const statusText=tgt===0?'No target':isLive?'In progress':pts>=tgt?'On target':pts>=tgt*0.9?'Close':'Below target';
+  const weekLabel=isWknd?getWeekendLabel(week,year):getWeekLabel(week,year);
+
+  // This week raw data
+  const weekRows=historyRaw.filter(r=>parseInt(r['Week']||r['week'])===week&&parseInt(r['Year']||r['year'])===year&&(r['Tester']||'').trim()===tester);
+  const gamePts={},gameCnt={},reasonPts={},reasonCnt={},ptFreq={};
+  weekRows.forEach(r=>{
+    const g=(r['Game Title']||'').replace(/\s*\(.*?\)\s*/g,'').trim();
+    const rs=(r['Reason']||'Other').trim()||'Other';
+    const p=parseFloat(r['Test Value']||0)||0;
+    if(g){gamePts[g]=(gamePts[g]||0)+p;gameCnt[g]=(gameCnt[g]||0)+1;}
+    reasonPts[rs]=(reasonPts[rs]||0)+p;
+    reasonCnt[rs]=(reasonCnt[rs]||0)+1;
+    const pk=Math.round(p*100)/100;
+    ptFreq[pk]=(ptFreq[pk]||0)+1;
+  });
+  const topGames=Object.entries(gamePts).sort((a,b)=>b[1]-a[1]);
+  const topReasons=Object.entries(reasonPts).sort((a,b)=>b[1]-a[1]);
+  const mostCommonPt=Object.entries(ptFreq).sort((a,b)=>b[1]-a[1])[0];
+  const totalTests=weekRows.length;
+  const avgPtPerTest=totalTests>0?(pts/totalTests).toFixed(2):0;
+
+  // Previous week data
+  const prevWeek=week-1;
+  const prevWeekRows=historyRaw.filter(r=>parseInt(r['Week']||r['week'])===prevWeek&&parseInt(r['Year']||r['year'])===year&&(r['Tester']||'').trim()===tester);
+  const prevPts=prevWeekRows.reduce((s,r)=>s+(parseFloat(r['Test Value']||0)||0),0);
+  const prevTgt=getTarget(tester,prevWeek,year);
+  const prevGamePts={},prevReasonPts={};
+  prevWeekRows.forEach(r=>{
+    const g=(r['Game Title']||'').replace(/\s*\(.*?\)\s*/g,'').trim();
+    const rs=(r['Reason']||'Other').trim()||'Other';
+    const p=parseFloat(r['Test Value']||0)||0;
+    if(g)prevGamePts[g]=(prevGamePts[g]||0)+p;
+    prevReasonPts[rs]=(prevReasonPts[rs]||0)+p;
+  });
+  const prevTopGame=Object.entries(prevGamePts).sort((a,b)=>b[1]-a[1])[0];
+  const ptsDiff=pts-prevPts;
+  const ptsDiffStr=ptsDiff===0?'same as':(ptsDiff>0?`+${ptsDiff.toFixed(2)} vs`:`${ptsDiff.toFixed(2)} vs`);
+  const ptsDiffColor=ptsDiff>0?'var(--green)':ptsDiff<0?'var(--red)':'var(--text2)';
+
+  // All-time game analysis
+  const allTimeGamePts={},allTimeGameCnt={},allTimeReasonPts={},allTimePtFreq={};
+  historyRaw.filter(r=>(r['Tester']||'').trim()===tester).forEach(r=>{
+    const g=(r['Game Title']||'').replace(/\s*\(.*?\)\s*/g,'').trim();
+    const rs=(r['Reason']||'Other').trim()||'Other';
+    const p=parseFloat(r['Test Value']||0)||0;
+    if(g){allTimeGamePts[g]=(allTimeGamePts[g]||0)+p;allTimeGameCnt[g]=(allTimeGameCnt[g]||0)+1;}
+    allTimeReasonPts[rs]=(allTimeReasonPts[rs]||0)+p;
+    const pk=Math.round(p*100)/100;
+    allTimePtFreq[pk]=(allTimePtFreq[pk]||0)+1;
+  });
+  const allTopGame=Object.entries(allTimeGameCnt).sort((a,b)=>b[1]-a[1])[0];
+  const allTopReason=Object.entries(allTimeReasonPts).sort((a,b)=>b[1]-a[1])[0];
+  const allMostCommonPt=Object.entries(allTimePtFreq).sort((a,b)=>b[1]-a[1])[0];
+  const allTotalTests=Object.values(allTimeGameCnt).reduce((s,v)=>s+v,0);
+
+  // Analysis builder
+  function buildAnalysis(){
+    const lines=[];
+    if(isLive){
+      lines.push(`<strong>${tester}</strong> is <strong style="color:${barC}">${pct}%</strong> through their ${tgt}-pt target with <strong>${pts} pts</strong> so far — ${remaining} pts still needed.`);
+    } else if(pts>=tgt&&tgt>0){
+      lines.push(`<strong>${tester}</strong> hit their <strong style="color:var(--green)">${tgt}-pt target</strong> this week with <strong>${pts} pts</strong>.`);
+    } else {
+      lines.push(`<strong>${tester}</strong> finished at <strong style="color:${barC}">${pts} pts</strong> against a ${tgt}-pt target (${pct}% achieved).`);
+    }
+    if(prevWeekRows.length>0){
+      lines.push(`Compared to last week's <strong>${prevPts.toFixed(2)} pts</strong> (Wk ${prevWeek}), that's <strong style="color:${ptsDiffColor}">${ptsDiff>0?'+':''}${ptsDiff.toFixed(2)} pts</strong> week-over-week.`);
+    }
+    if(topGames.length>0){
+      const top=topGames[0];
+      const wasTopLastWk=prevTopGame&&prevTopGame[0]===top[0];
+      lines.push(`This week they tested <strong>${totalTests} game${totalTests!==1?'s':''}</strong> across ${Object.keys(reasonPts).length} test type${Object.keys(reasonPts).length!==1?'s':''}. Highest-earning game was <strong>${top[0]}</strong> (${top[1].toFixed(2)} pts).${wasTopLastWk?' That was also their top game last week, suggesting a recurring focus.' : ''}`);
+    }
+    if(topReasons.length>0){
+      const topR=topReasons[0];
+      const pct2=totalTests>0?Math.round((reasonCnt[topR[0]]||0)/totalTests*100):0;
+      lines.push(`Their dominant test type this week was <strong>${topR[0]}</strong> — ${pct2}% of tests (${topR[1].toFixed(2)} pts).${topReasons.length>1?` They also handled <strong>${topReasons[1][0]}</strong> (${topReasons[1][1].toFixed(2)} pts).`:''}`);
+      if(prevWeekRows.length>0){
+        const prevTopR=Object.entries(prevReasonPts).sort((a,b)=>b[1]-a[1])[0];
+        if(prevTopR&&prevTopR[0]!==topR[0]){
+          lines.push(`Last week their focus was <strong>${prevTopR[0]}</strong> — a notable shift in test type this week, possibly due to a batch of ${topR[0].toLowerCase()}s in the queue.`);
+        }
+      }
+    }
+    if(mostCommonPt){
+      const avgPtMsg=parseFloat(avgPtPerTest)>=1?'leaning toward higher-value tests':'mostly handling quick low-point tests';
+      lines.push(`The most common point value was <strong>${mostCommonPt[0]} pt${mostCommonPt[0]==1?'':'s'}</strong> (${mostCommonPt[1]} test${mostCommonPt[1]!==1?'s':''}), with an avg of <strong>${avgPtPerTest} pts per test</strong> — ${avgPtMsg}.`);
+    }
+    if(allTopGame){
+      lines.push(`All-time, their most-tested game is <strong>${allTopGame[0]}</strong> (${allTopGame[1]} tests). They gravitate toward <strong>${allTopReason?allTopReason[0]:'—'}</strong> tests overall, and their most frequent point value is <strong>${allMostCommonPt?allMostCommonPt[0]:'—'} pt${allMostCommonPt&&allMostCommonPt[0]==1?'':'s'}</strong>.`);
+    }
+    const hitRate=completed.length?Math.round(hitCount/completed.length*100):0;
+    if(completed.length>0){
+      const trend=hitRate>=80?'a consistently strong performer':hitRate>=60?'generally on track but with some inconsistent weeks':'showing a pattern of missing targets — worth a check-in';
+      lines.push(`Over ${completed.length} completed weeks they've hit target <strong>${hitCount} times</strong> (${hitRate}% hit rate) — ${trend}.`);
+    }
+    return lines.map(l=>`<p style="margin-bottom:10px;font-size:13px;color:var(--text2);line-height:1.7">${l}</p>`).join('');
+  }
+
+  const gamesHtml=topGames.length?topGames.slice(0,6).map(([g,p],i)=>`
+    <div class="insight-row">
+      <span class="insight-row-label"><span style="color:var(--text3);margin-right:6px">${i+1}.</span>${g}</span>
+      <span class="insight-row-val" style="color:var(--accent2)">${p.toFixed(2)} pts <span style="color:var(--text3);font-weight:400">(${gameCnt[g]})</span></span>
+    </div>`).join(''):'<div style="padding:8px 0;color:var(--text3);font-size:12px">No games logged this week</div>';
+
+  const reasonsHtml=topReasons.length?topReasons.map(([r,p])=>{
+    const c=REASON_COLORS[r]||'#888';
+    const pctR=totalTests>0?Math.round((reasonCnt[r]||0)/totalTests*100):0;
+    return `<div class="insight-row">
+      <span class="insight-row-label" style="display:flex;align-items:center;gap:6px">
+        <span style="width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0"></span>${r}
+      </span>
+      <span class="insight-row-val">${p.toFixed(2)} pts <span style="color:var(--text3);font-weight:400">${pctR}%</span></span>
+    </div>`;
+  }).join(''):'<div style="padding:8px 0;color:var(--text3);font-size:12px">No data</div>';
+
+  const freqHtml=Object.entries(ptFreq).sort((a,b)=>parseFloat(a[0])-parseFloat(b[0])).map(([p,c])=>`
+    <div class="insight-row">
+      <span class="insight-row-label">${p} pt${p==1?'':'s'}</span>
+      <span class="insight-row-val">${c} game${c!==1?'s':''}</span>
+    </div>`).join('')||'<div style="padding:8px 0;color:var(--text3);font-size:12px">No data</div>';
+
+  const prevCompareHtml=prevWeekRows.length>0?`
+    <div class="insight-row"><span class="insight-row-label">Wk ${prevWeek} points</span><span class="insight-row-val">${prevPts.toFixed(2)}</span></div>
+    <div class="insight-row"><span class="insight-row-label">Wk ${prevWeek} target</span><span class="insight-row-val">${prevTgt}</span></div>
+    <div class="insight-row"><span class="insight-row-label">Week-over-week</span><span class="insight-row-val" style="color:${ptsDiffColor}">${ptsDiff>0?'+':''}${ptsDiff.toFixed(2)} pts</span></div>
+    <div class="insight-row"><span class="insight-row-label">Last week top game</span><span class="insight-row-val" style="font-size:11px;max-width:160px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${prevTopGame?prevTopGame[0]:'—'}</span></div>`
+    :'<div style="padding:8px 0;color:var(--text3);font-size:12px">No previous week data</div>';
+
+  document.getElementById('ins-content').innerHTML=`
+    <div class="insight-layout">
+      <div class="insight-hero">
+        <div class="insight-tester-header">
+          <div class="insight-avatar" style="background:${avatarColor(tester)}">${initials(tester)}</div>
+          <div><div class="insight-name">${tester}</div><div class="insight-week-label">${weekLabel}</div></div>
+          ${isLive?'<div class="live-badge" style="margin-left:auto"><div class="live-dot"></div>Live</div>':''}
+          ${isWknd?'<div style="margin-left:auto;background:var(--orange-bg);border:1px solid rgba(249,115,22,.2);color:var(--orange);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px">Weekend ☽</div>':''}
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:700">Points this week</div>
+          <div class="big-number" style="color:${barC}">${pts} <span>/ ${tgt}</span></div>
+        </div>
+        <div>
+          <div class="progress-wrap-lg"><div class="progress-bar-lg" style="width:${pct}%;background:${barC}"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--text3)">
+            <span>${pct}% complete</span>
+            <span>${remaining>0?remaining+' still needed':'✓ Target reached'}</span>
+          </div>
+        </div>
+        <div class="insight-stats-grid">
+          <div class="insight-stat"><div class="insight-stat-label">Status</div><div class="insight-stat-val" style="font-size:14px;color:${barC}">${statusText}</div></div>
+          <div class="insight-stat"><div class="insight-stat-label">Hit rate</div><div class="insight-stat-val" style="color:var(--green)">${completed.length?Math.round(hitCount/completed.length*100):0}%</div></div>
+          <div class="insight-stat"><div class="insight-stat-label">Avg / week</div><div class="insight-stat-val" style="color:var(--accent2)">${avgPts}</div></div>
+          <div class="insight-stat"><div class="insight-stat-label">Tests this wk</div><div class="insight-stat-val" style="color:var(--accent2)">${totalTests}</div></div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Analysis</div>
+          ${buildAnalysis()}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Historical performance</span></div>
+          <div style="padding:0 18px"><div class="insight-rows">
+            <div class="insight-row"><span class="insight-row-label">Weeks tracked</span><span class="insight-row-val">${allRows.length}</span></div>
+            <div class="insight-row"><span class="insight-row-label">Target met</span><span class="insight-row-val" style="color:var(--green)">${hitCount} / ${completed.length}</span></div>
+            <div class="insight-row"><span class="insight-row-label">Average pts / week</span><span class="insight-row-val">${avgPts}</span></div>
+            <div class="insight-row"><span class="insight-row-label">Personal best</span><span class="insight-row-val">${bestWk} pts</span></div>
+            <div class="insight-row"><span class="insight-row-label">All-time tests</span><span class="insight-row-val">${allTotalTests}</span></div>
+            <div class="insight-row"><span class="insight-row-label">Most tested game</span><span class="insight-row-val" style="font-size:11px;max-width:160px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${allTopGame?allTopGame[0]:'—'}</span></div>
+          </div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">vs Last week (Wk ${prevWeek})</span></div>
+          <div style="padding:0 18px"><div class="insight-rows">${prevCompareHtml}</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Top games this week</span><span style="font-size:11px;color:var(--text3)">${totalTests} total</span></div>
+          <div style="padding:0 18px"><div class="insight-rows">${gamesHtml}</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Test type breakdown</span></div>
+          <div style="padding:0 18px"><div class="insight-rows">${reasonsHtml}</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Points frequency</span><span style="font-size:11px;color:var(--text3)">Tests per point value</span></div>
+          <div style="padding:0 18px"><div class="insight-rows">${freqHtml}</div></div>
+        </div>
+      </div>
+    </div>`;
+}
+// ── SUPPORT CLAIMS ──
+let claimsView = 'monthly';
+let claimsStatusFilter = 'ALL'; // 'ALL' or one of CLAIM_STATUSES
+
+function parseClaimDate(str){
+  if(!str||!str.trim()||str.trim()==='N/A'||str.trim()==='N/ A') return null;
+  const s=str.trim();
+  const mdy=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(mdy) return new Date(parseInt(mdy[3]),parseInt(mdy[1])-1,parseInt(mdy[2]));
+  const ymd=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(ymd) return new Date(parseInt(ymd[1]),parseInt(ymd[2])-1,parseInt(ymd[3]));
+  return null;
+}
+
+function getWeekNum(d){
+  const jan1=new Date(d.getFullYear(),0,1);
+  return Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
+}
+
+function getPeriodKey(d){
+  if(claimsView==='monthly')
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  return d.getFullYear()+'-'+String(getWeekNum(d)).padStart(2,'0');
+}
+
+function getPeriodLabel(p){
+  const [y,n]=p.split('-');
+  if(claimsView==='monthly') return MONTHS[parseInt(n)]+' '+y;
+  return 'Week '+parseInt(n)+', '+y;
+}
+
+let selectedClaimsPeriod='';
+
+function initClaims(){
+  claimsView='monthly';
+  selectedClaimsPeriod='';
+  document.getElementById('claims-toggle-monthly').className='toggle-btn active';
+  document.getElementById('claims-toggle-weekly').className='toggle-btn';
+  renderClaims();
+}
+
+function setClaimsView(v){
+  claimsView=v;
+  selectedClaimsPeriod='';
+  document.getElementById('claims-toggle-monthly').className='toggle-btn'+(v==='monthly'?' active':'');
+  document.getElementById('claims-toggle-weekly').className='toggle-btn'+(v==='weekly'?' active':'');
+  renderClaims();
+}
+
+function renderClaims(){
+  // COUNTA: count every row that has a Game Title (col B) and a Discord date (col E)
+  // Group by period from col E, filter by status from col K
+  const rows = claimsRaw.filter(r=>(r['Game Title']||'').trim() && parseClaimDate(r['Discord / Slack Thread Date']));
+
+  // Build period list
+  const periodSet=new Set();
+  rows.forEach(r=>{
+    const d=parseClaimDate(r['Discord / Slack Thread Date']);
+    periodSet.add(getPeriodKey(d));
+  });
+  const periods=[...periodSet].sort().reverse();
+
+  // Build/update period dropdown
+  const ctrl=document.getElementById('claims-controls');
+  ctrl.innerHTML='';
+  const lbl=document.createElement('span');lbl.className='ctrl-label';
+  lbl.textContent=claimsView==='monthly'?'Month':'Week';
+  ctrl.appendChild(lbl);
+  const sel=document.createElement('select');sel.id='claims-period';
+  periods.forEach(p=>{
+    const o=document.createElement('option');o.value=p;o.textContent=getPeriodLabel(p);sel.appendChild(o);
+  });
+  // Restore or default to most recent
+  if(selectedClaimsPeriod && periods.includes(selectedClaimsPeriod)) sel.value=selectedClaimsPeriod;
+  else { sel.value=periods[0]||''; selectedClaimsPeriod=sel.value; }
+  sel.onchange=function(){ selectedClaimsPeriod=this.value; renderClaims(); };
+  ctrl.appendChild(sel);
+
+  const curPeriod=sel.value;
+
+  // Filter to selected period — COUNTA of col K per status
+  const periodRows=rows.filter(r=>{
+    const d=parseClaimDate(r['Discord / Slack Thread Date']);
+    return getPeriodKey(d)===curPeriod;
+  });
+
+  // Render status filter buttons
+  const filterBar = document.getElementById('claims-status-filters');
+  filterBar.innerHTML = '';
+  const allBtn = document.createElement('button');
+  allBtn.className = 'toggle-btn' + (claimsStatusFilter==='ALL'?' active':'');
+  allBtn.textContent = 'All';
+  allBtn.onclick = () => { claimsStatusFilter='ALL'; renderClaims(); };
+  filterBar.appendChild(allBtn);
+  CLAIM_STATUSES.forEach(s => {
+    const c = CLAIM_COLORS[s];
+    const btn = document.createElement('button');
+    btn.className = 'toggle-btn';
+    btn.style.cssText = claimsStatusFilter===s ? `background:${c};color:#fff;border-color:${c}` : `color:${c};border:1px solid ${c}44;background:${c}11`;
+    btn.textContent = CLAIM_SHORT[s];
+    btn.onclick = () => { claimsStatusFilter = claimsStatusFilter===s ? 'ALL' : s; renderClaims(); };
+    filterBar.appendChild(btn);
+  });
+
+  // Apply status filter on top of period rows
+  const visibleRows = claimsStatusFilter==='ALL' ? periodRows : periodRows.filter(r=>(r['Claim Status']||'').trim()===claimsStatusFilter);
+
+  // Sort by col E ascending
+  visibleRows.sort((a,b)=>parseClaimDate(a['Discord / Slack Thread Date'])-parseClaimDate(b['Discord / Slack Thread Date']));
+
+  // Count per status (COUNTA equivalent)
+  const counts={};
+  CLAIM_STATUSES.forEach(s=>counts[s]=0);
+  periodRows.forEach(r=>{
+    const s=(r['Claim Status']||'').trim();
+    if(counts[s]!==undefined) counts[s]++;
+  });
+  const total=visibleRows.length;
+
+  document.getElementById('claims-table-title').textContent=
+    claimsView==='monthly'?'Monthly claims tracker':'Weekly claims tracker';
+
+  // Stat strip — 7 cards
+  document.getElementById('claims-stats').style.gridTemplateColumns='repeat(7,1fr)';
+  document.getElementById('claims-stats').innerHTML=CLAIM_STATUSES.map(s=>{
+    const c=CLAIM_COLORS[s];
+    return '<div class="stat-card">'
+      +'<div class="stat-label" style="color:'+c+'">'+CLAIM_SHORT[s]+'</div>'
+      +'<div class="stat-value" style="color:'+c+'">'+counts[s]+'</div>'
+      +'<div class="stat-sub">of '+total+' total</div>'
+      +'</div>';
+  }).join('');
+
+  // Table: col B, col E, col K only
+  document.getElementById('claims-thead').innerHTML='<tr>'
+    +'<th>#</th><th>Game</th><th>Discord Date</th><th>Status</th></tr>';
+
+  const tbody=document.getElementById('claims-body');
+  tbody.innerHTML='';
+  if(!visibleRows.length){
+    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3)">No claims found for this period.</td></tr>';
+    return;
+  }
+  visibleRows.forEach((r,i)=>{
+    const s=(r['Claim Status']||'').trim();
+    const c=CLAIM_COLORS[s]||'#888';
+    const label=CLAIM_SHORT[s]||s;
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td style="color:var(--text3);font-size:12px">'+(i+1)+'</td>'
+      +'<td style="font-weight:600">'+((r['Game Title']||'').trim()||'—')+'</td>'
+      +'<td style="color:var(--text3);font-size:12px">'+((r['Discord / Slack Thread Date']||'').trim()||'—')+'</td>'
+      +'<td><span class="badge" style="background:'+c+'18;color:'+c+';border:1px solid '+c+'44">'+label+'</span></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+
+// ── EXPORT REPORT ──
+let exportType = 'weekly';
+
+function setExportType(t) {
+  exportType = t;
+  document.getElementById('exp-toggle-weekly').className = 'toggle-btn' + (t==='weekly'?' active':'');
+  document.getElementById('exp-toggle-monthly').className = 'toggle-btn' + (t==='monthly'?' active':'');
+  buildExportControls();
+  renderExportPreview();
+}
+
+function buildExportControls() {
+  const ctrl = document.getElementById('exp-period-controls');
+  ctrl.innerHTML = '';
+
+  if (exportType === 'weekly') {
+    const allYears = [...new Set([...Object.keys(weeklyDataRegular), ...Object.keys(weeklyDataWeekend)].map(Number))].sort((a,b)=>b-a);
+    const ySel = document.createElement('select'); ySel.id = 'exp-year';
+    allYears.forEach(y => { const o = document.createElement('option'); o.value=y; o.textContent=y; ySel.appendChild(o); });
+    ySel.onchange = () => { buildExpWeekSelect(); renderExportPreview(); };
+    const lbl1 = document.createElement('span'); lbl1.className='ctrl-label'; lbl1.textContent='Year';
+    ctrl.appendChild(lbl1); ctrl.appendChild(ySel);
+    buildExpWeekSelect();
+    const wSel = document.getElementById('exp-week');
+    if (wSel) wSel.onchange = renderExportPreview;
+  } else {
+    // Monthly — derive from history
+    const monthSet = new Set();
+    historyRaw.forEach(r => {
+      const y = parseInt(r['Year']||r['year']), m = parseInt(r['Month']||r['month']);
+      if (!isNaN(y) && !isNaN(m)) monthSet.add(`${y}-${String(m).padStart(2,'0')}`);
+    });
+    const months = [...monthSet].sort().reverse();
+    const lbl = document.createElement('span'); lbl.className='ctrl-label'; lbl.textContent='Month';
+    const sel = document.createElement('select'); sel.id='exp-month'; sel.onchange=renderExportPreview;
+    months.forEach(p => {
+      const [y,m] = p.split('-');
+      const o = document.createElement('option'); o.value=p;
+      o.textContent = MONTHS[parseInt(m)] + ' ' + y;
+      sel.appendChild(o);
+    });
+    ctrl.appendChild(lbl); ctrl.appendChild(sel);
+  }
+}
+
+function buildExpWeekSelect() {
+  const ctrl = document.getElementById('exp-period-controls');
+  const existing = document.getElementById('exp-week');
+  if (existing) existing.remove();
+  const ySel = document.getElementById('exp-year');
+  if (!ySel) return;
+  const year = parseInt(ySel.value);
+  const weeks = [...new Set([
+    ...Object.keys(weeklyDataRegular[year]||{}).map(Number),
+    ...Object.keys(weeklyDataWeekend[year]||{}).map(Number)
+  ])].sort((a,b)=>b-a);
+  const lbl = document.createElement('span'); lbl.className='ctrl-label'; lbl.textContent='Week';
+  const sel = document.createElement('select'); sel.id='exp-week'; sel.onchange=renderExportPreview;
+  weeks.forEach(w => { const o=document.createElement('option'); o.value=w; o.textContent=`Week ${w} — ${getWeekLabel(w,year)}`; sel.appendChild(o); });
+  ctrl.appendChild(lbl); ctrl.appendChild(sel);
+}
+
+function getExportRows() {
+  if (exportType === 'weekly') {
+    const year = parseInt((document.getElementById('exp-year')||{}).value||0);
+    const week = parseInt((document.getElementById('exp-week')||{}).value||0);
+    if (!year || !week) return [];
+    // Count games per tester for this week
+    const gameCounts = {};
+    historyRaw.forEach(r => {
+      const t = (r['Tester']||'').trim();
+      const w = parseInt(r['Week']||r['week']);
+      const y = parseInt(r['Year']||r['year']);
+      const g = (r['Game Title']||'').trim();
+      if (y===year && w===week && g && ALL_TESTERS.includes(t)) {
+        gameCounts[t] = (gameCounts[t]||0) + 1;
+      }
+    });
+    const rows = [];
+    ALL_TESTERS.filter(t=>activeTesters.includes(t)).forEach(tester => {
+      const isWknd = WEEKEND_TESTERS.includes(tester) && week >= WEEKEND_CUTOFF_WEEK && year >= 2026;
+      const wd = isWknd ? weeklyDataWeekend : weeklyDataRegular;
+      const pts = ((wd[year]||{})[week]||{})[tester]?.p || 0;
+      const tgt = getTarget(tester, week, year);
+      const pct = tgt > 0 ? Math.round(pts/tgt*100) : 0;
+      const status = pts >= tgt ? 'Hit' : pts >= tgt*0.8 ? 'Close' : 'Missed';
+      const games = gameCounts[tester] || 0;
+      rows.push({ tester, pts, tgt, pct, status, isWknd, games });
+    });
+    return rows;
+  } else {
+    const period = (document.getElementById('exp-month')||{}).value||'';
+    if (!period) return [];
+    const [py, pm] = period.split('-').map(Number);
+    const totals = {}, gameCounts = {};
+    historyRaw.forEach(r => {
+      const y = parseInt(r['Year']||r['year']), m = parseInt(r['Month']||r['month']);
+      const tester = (r['Tester']||'').trim();
+      const pts = parseFloat(r['Test Value']||0)||0;
+      const g = (r['Game Title']||'').trim();
+      if (y===py && m===pm && ALL_TESTERS.includes(tester)) {
+        totals[tester] = (totals[tester]||0) + pts;
+        if (g) gameCounts[tester] = (gameCounts[tester]||0) + 1;
+      }
+    });
+    return ALL_TESTERS.filter(t=>activeTesters.includes(t)).map(tester => ({
+      tester,
+      pts: Math.round((totals[tester]||0)*100)/100,
+      games: gameCounts[tester] || 0,
+      tgt: null, pct: null, status: null,
+    })).filter(r => r.pts > 0).sort((a,b)=>b.pts-a.pts);
+  }
+}
+
+function renderExportPreview() {
+  const preview = document.getElementById('exp-preview');
+  const rows = getExportRows();
+  const isWeekly = exportType === 'weekly';
+
+  let periodLabel = '';
+  if (isWeekly) {
+    const year = parseInt((document.getElementById('exp-year')||{}).value||0);
+    const week = parseInt((document.getElementById('exp-week')||{}).value||0);
+    periodLabel = week ? getWeekLabel(week, year) : '';
+  } else {
+    const sel = document.getElementById('exp-month');
+    periodLabel = sel ? sel.options[sel.selectedIndex]?.text : '';
+  }
+
+  const totalPts = rows.reduce((s,r)=>s+r.pts,0).toFixed(2);
+  const totalGames = rows.reduce((s,r)=>s+r.games,0);
+  const hitCount = rows.filter(r=>r.status==='Hit').length;
+  const now = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  preview.innerHTML = `
+    <div id="pdf-content" style="font-family:Arial,sans-serif;color:#f0f0f0;max-width:900px;margin:0 auto;">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #0ea5e9;padding-bottom:16px;margin-bottom:24px;">
+        <div>
+          <div style="font-size:22px;font-weight:700;color:#fff;">QA Tester Report</div>
+          <div style="font-size:13px;color:#888;margin-top:3px;">${isWeekly ? 'Weekly' : 'Monthly'} · ${periodLabel}</div>
+        </div>
+        <div style="text-align:right;font-size:11px;color:#555;">Generated ${now}</div>
+      </div>
+
+      <!-- Summary cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;">
+        <div style="background:#1c1c1c;border:1px solid #2a2a2a;border-radius:10px;padding:16px;">
+          <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Total Testers</div>
+          <div style="font-size:28px;font-weight:700;color:#0ea5e9;">${rows.length}</div>
+        </div>
+        <div style="background:#1c1c1c;border:1px solid #2a2a2a;border-radius:10px;padding:16px;">
+          <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Total Points</div>
+          <div style="font-size:28px;font-weight:700;color:#22c55e;">${totalPts}</div>
+        </div>
+        <div style="background:#1c1c1c;border:1px solid #2a2a2a;border-radius:10px;padding:16px;">
+          <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Games Tested</div>
+          <div style="font-size:28px;font-weight:700;color:#0ea5e9;">${totalGames}</div>
+        </div>
+        ${isWeekly ? `<div style="background:#1c1c1c;border:1px solid #2a2a2a;border-radius:10px;padding:16px;">
+          <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Target Hit</div>
+          <div style="font-size:28px;font-weight:700;color:#f59e0b;">${hitCount} / ${rows.length}</div>
+        </div>` : `<div style="background:#1c1c1c;border:1px solid #2a2a2a;border-radius:10px;padding:16px;">
+          <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Avg Points</div>
+          <div style="font-size:28px;font-weight:700;color:#a855f7;">${rows.length ? (totalPts/rows.length).toFixed(1) : 0}</div>
+        </div>`}
+      </div>
+
+      <!-- Table -->
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="background:#1c1c1c;">
+            <th style="padding:10px 14px;text-align:left;color:#555;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">#</th>
+            <th style="padding:10px 14px;text-align:left;color:#555;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Tester</th>
+            <th style="padding:10px 14px;text-align:right;color:#555;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Points</th>
+            <th style="padding:10px 14px;text-align:right;color:#555;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Games</th>
+            ${isWeekly ? `
+            <th style="padding:10px 14px;text-align:right;color:#555;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Target</th>
+            <th style="padding:10px 14px;text-align:right;color:#555;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">%</th>
+            <th style="padding:10px 14px;text-align:center;color:#555;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Status</th>` : ''}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((r,i) => {
+            const statusColor = r.status==='Hit'?'#22c55e':r.status==='Close'?'#eab308':'#ef4444';
+            return `<tr style="border-bottom:1px solid #1c1c1c;">
+              <td style="padding:10px 14px;color:#555;">${i+1}</td>
+              <td style="padding:10px 14px;font-weight:600;">${r.tester}${r.isWknd?' ☽':''}</td>
+              <td style="padding:10px 14px;text-align:right;font-weight:700;color:#22c55e;">${r.pts}</td>
+              <td style="padding:10px 14px;text-align:right;color:#888;">${r.games}</td>
+              ${isWeekly ? `
+              <td style="padding:10px 14px;text-align:right;color:#888;">${r.tgt}</td>
+              <td style="padding:10px 14px;text-align:right;color:#888;">${r.pct}%</td>
+              <td style="padding:10px 14px;text-align:center;"><span style="background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor}44;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;">${r.status}</span></td>` : ''}
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function exportPDF() {
+  const isW = exportType === 'weekly';
+  const rows2 = getExportRows();
+  const totalPts2 = rows2.reduce((s,r)=>s+r.pts,0).toFixed(2);
+  const totalGames2 = rows2.reduce((s,r)=>s+r.games,0);
+  const hitCount2 = rows2.filter(r=>r.status==='Hit').length;
+  const now2 = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  let periodLabel2 = '';
+  if (isW) {
+    const y2 = (document.getElementById('exp-year')||{}).value||'';
+    const w2 = (document.getElementById('exp-week')||{}).value||'';
+    periodLabel2 = w2 ? getWeekLabel(parseInt(w2), parseInt(y2)) : '';
+  } else {
+    const sel2 = document.getElementById('exp-month');
+    periodLabel2 = sel2 ? sel2.options[sel2.selectedIndex].text : '';
+  }
+
+  const statusStyle = function(s) {
+    if (s==='Hit')   return 'background:#dcfce7;color:#16a34a;border:1px solid #86efac;';
+    if (s==='Close') return 'background:#fef9c3;color:#d97706;border:1px solid #fcd34d;';
+    return 'background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;';
+  };
+
+  let tableRows = '';
+  rows2.forEach(function(r, i) {
+    tableRows += '<tr style="border-bottom:1px solid #e5e7eb;background:' + (i%2===0?'#fff':'#f9fafb') + '">'
+      + '<td style="padding:9px 14px;color:#9ca3af;font-size:12px;">' + (i+1) + '</td>'
+      + '<td style="padding:9px 14px;font-weight:600;color:#111;">' + r.tester + (r.isWknd?' ☽':'') + '</td>'
+      + '<td style="padding:9px 14px;text-align:right;font-weight:700;color:#16a34a;">' + r.pts + '</td>'
+      + '<td style="padding:9px 14px;text-align:right;color:#374151;">' + r.games + '</td>'
+      + (isW
+        ? '<td style="padding:9px 14px;text-align:right;color:#374151;">' + r.tgt + '</td>'
+        + '<td style="padding:9px 14px;text-align:right;color:#374151;">' + r.pct + '%</td>'
+        + '<td style="padding:9px 14px;text-align:center;"><span style="' + statusStyle(r.status) + 'padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;">' + r.status + '</span></td>'
+        : '')
+      + '</tr>';
+  });
+
+  const extraHeader = isW
+    ? '<th style="padding:10px 14px;text-align:right;color:#6b7280;font-size:11px;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Target</th>'
+    + '<th style="padding:10px 14px;text-align:right;color:#6b7280;font-size:11px;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">%</th>'
+    + '<th style="padding:10px 14px;text-align:center;color:#6b7280;font-size:11px;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Status</th>'
+    : '';
+
+  const card4 = isW
+    ? '<div style="border:1px solid #e5e7eb;border-top:3px solid #d97706;border-radius:8px;padding:14px;">'
+    + '<div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Target Hit</div>'
+    + '<div style="font-size:26px;font-weight:700;color:#d97706;">' + hitCount2 + ' / ' + rows2.length + '</div></div>'
+    : '<div style="border:1px solid #e5e7eb;border-top:3px solid #a855f7;border-radius:8px;padding:14px;">'
+    + '<div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Avg Points</div>'
+    + '<div style="font-size:26px;font-weight:700;color:#a855f7;">' + (rows2.length ? (totalPts2/rows2.length).toFixed(1) : 0) + '</div></div>';
+
+  const html = '<!DOCTYPE html><html><head><title>QA Report - ' + periodLabel2 + '</title>'
+    + '<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;background:#fff;color:#111;padding:40px;font-size:13px;}'
+    + '@media print{body{padding:20px;}*{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style>'
+    + '</head><body><div style="max-width:900px;margin:0 auto;">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #0ea5e9;padding-bottom:16px;margin-bottom:24px;">'
+    + '<div><div style="font-size:22px;font-weight:700;color:#111;">QA Tester Report</div>'
+    + '<div style="font-size:13px;color:#6b7280;margin-top:3px;">' + (isW?'Weekly':'Monthly') + ' &middot; ' + periodLabel2 + '</div></div>'
+    + '<div style="text-align:right;font-size:11px;color:#9ca3af;">Generated ' + now2 + '</div></div>'
+    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">'
+    + '<div style="border:1px solid #e5e7eb;border-top:3px solid #0ea5e9;border-radius:8px;padding:14px;"><div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Total Testers</div><div style="font-size:26px;font-weight:700;color:#0ea5e9;">' + rows2.length + '</div></div>'
+    + '<div style="border:1px solid #e5e7eb;border-top:3px solid #16a34a;border-radius:8px;padding:14px;"><div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Total Points</div><div style="font-size:26px;font-weight:700;color:#16a34a;">' + totalPts2 + '</div></div>'
+    + '<div style="border:1px solid #e5e7eb;border-top:3px solid #6366f1;border-radius:8px;padding:14px;"><div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Games Tested</div><div style="font-size:26px;font-weight:700;color:#6366f1;">' + totalGames2 + '</div></div>'
+    + card4
+    + '</div>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+    + '<thead><tr style="background:#f3f4f6;">'
+    + '<th style="padding:10px 14px;text-align:left;color:#6b7280;font-size:11px;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">#</th>'
+    + '<th style="padding:10px 14px;text-align:left;color:#6b7280;font-size:11px;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Tester</th>'
+    + '<th style="padding:10px 14px;text-align:right;color:#6b7280;font-size:11px;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Points</th>'
+    + '<th style="padding:10px 14px;text-align:right;color:#6b7280;font-size:11px;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Games</th>'
+    + extraHeader
+    + '</tr></thead><tbody>' + tableRows + '</tbody></table>'
+    + '</div></body></html>';
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(function(){ win.print(); }, 500);
+}
+
+
+function initExport() {
+  buildExportControls();
+  renderExportPreview();
+}
+
+// ── SETTINGS ──
+function initSettings() {
+  const list = document.getElementById('tester-toggle-list');
+  list.innerHTML = '';
+  ALL_TESTERS.forEach(t => {
+    const active = activeTesters.includes(t);
+    const isWknd = WEEKEND_TESTERS.includes(t);
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg2);border:1px solid ' + (active?'var(--accent2)':'var(--border)') + ';border-radius:8px;transition:border-color .15s;';
+    row.id = 'trow-' + t;
+
+    // Active checkbox
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.id = 'tcheck-' + t; cb.checked = active;
+    cb.style.cssText = 'width:15px;height:15px;accent-color:var(--accent2);cursor:pointer;flex-shrink:0;';
+    cb.onchange = function(){ row.style.borderColor = this.checked ? 'var(--accent2)' : 'var(--border)'; };
+
+    // Name
+    const name = document.createElement('span');
+    name.style.cssText = 'font-size:13px;font-weight:500;flex:1;';
+    name.textContent = t;
+
+    // Shift toggle
+    const shiftToggle = document.createElement('div');
+    shiftToggle.style.cssText = 'display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;flex-shrink:0;';
+
+    const btnReg = document.createElement('button');
+    btnReg.textContent = 'Regular';
+    btnReg.style.cssText = 'padding:3px 10px;font-size:11px;font-weight:600;border:none;cursor:pointer;transition:all .15s;background:' + (!isWknd?'var(--accent2)':'var(--bg3)') + ';color:' + (!isWknd?'#fff':'var(--text2)') + ';';
+
+    const btnWknd = document.createElement('button');
+    btnWknd.textContent = '☽ Weekend';
+    btnWknd.style.cssText = 'padding:3px 10px;font-size:11px;font-weight:600;border:none;cursor:pointer;transition:all .15s;background:' + (isWknd?'#7c3aed':'var(--bg3)') + ';color:' + (isWknd?'#fff':'var(--text2)') + ';';
+
+    btnReg.onclick = function(){
+      btnReg.style.background='var(--accent2)'; btnReg.style.color='#fff';
+      btnWknd.style.background='var(--bg3)'; btnWknd.style.color='var(--text2)';
+      row.dataset.shift = 'regular';
+    };
+    btnWknd.onclick = function(){
+      btnWknd.style.background='#7c3aed'; btnWknd.style.color='#fff';
+      btnReg.style.background='var(--bg3)'; btnReg.style.color='var(--text2)';
+      row.dataset.shift = 'weekend';
+    };
+    row.dataset.shift = isWknd ? 'weekend' : 'regular';
+
+    shiftToggle.appendChild(btnReg);
+    shiftToggle.appendChild(btnWknd);
+    row.appendChild(cb);
+    row.appendChild(name);
+    row.appendChild(shiftToggle);
+    list.appendChild(row);
+  });
+}
+
+function setAllTesters(val) {
+  ALL_TESTERS.forEach(t => {
+    const cb = document.getElementById('tcheck-' + t);
+    const row = document.getElementById('trow-' + t);
+    if (cb) { cb.checked = val; row.style.borderColor = val ? 'var(--accent2)' : 'var(--border)'; }
+  });
+}
+
+function applyTesterSettings() {
+  activeTesters = [];
+  WEEKEND_TESTERS = [];
+  ALL_TESTERS.forEach(t => {
+    const cb = document.getElementById('tcheck-' + t);
+    const row = document.getElementById('trow-' + t);
+    if (cb && cb.checked) activeTesters.push(t);
+    if (row && row.dataset.shift === 'weekend') WEEKEND_TESTERS.push(t);
+  });
+  if (!activeTesters.length) { alert('Please select at least one tester.'); return; }
+  REGULAR_TESTERS = ALL_TESTERS.filter(t=>!WEEKEND_TESTERS.includes(t));
+  saveTesterSettings();
+  renderWeekly();
+  updateFooter();
+  alert('Settings saved! ' + activeTesters.length + ' active testers, ' + WEEKEND_TESTERS.length + ' on weekend shift.');
+}
+
+function updateFooter(){
+  const week = parseInt((document.getElementById('wk-week')||{}).value||0);
+  const year = parseInt((document.getElementById('wk-year')||{}).value||0);
+  const activeCount = activeTesters.length;
+  let totalTarget = 0;
+  if(week && year){
+    activeTesters.forEach(t => { totalTarget += getTarget(t, week, year); });
+  }
+  const footerEl = document.getElementById('sidebar-footer');
+  if(footerEl){
+    footerEl.innerHTML = (totalTarget > 0 ? 'Target: <strong>' + totalTarget + ' pts</strong> / week' : 'Target: — pts / week')
+      + '<br><span id="footer-active-count">' + activeCount + ' active testers</span>'
+      + '<br><span id="last-updated" style="color:var(--text3)">' + (document.getElementById('last-updated')||{}).textContent + '</span>';
+  }
+}
+
+// ── DAILY TRACKER ──
+let dailyShift = 'regular';
+
+const DAY_NAMES = {
+  1:'Sun', 2:'Mon', 3:'Tue', 4:'Wed', 5:'Thu', 6:'Fri', 7:'Sat'
+};
+// Regular shift days: Mon-Fri (day orders 1-5 in some configs)
+// Check what day orders exist in historyRaw
+const REGULAR_DAY_ORDERS = [1,2,3,4,5,6,7]; // Sun-Sat
+const WEEKEND_DAY_ORDERS  = [5,6,7,1,2,3]; // Thu-Tue
+
+function buildDailyData(year, week, shift) {
+  // Returns { tester: { dayOrder: pts } }
+  const result = {};
+  const isWknd = shift === 'weekend';
+
+  historyRaw.forEach(r => {
+    const t = (r['Tester']||'').trim();
+    const w = parseInt(r['Week']||r['week']);
+    const y = parseInt(r['Year']||r['year']);
+    const pts = parseFloat(r['Test Value']||0)||0;
+    const dayOrder = parseInt(r['Day Order']||r['day_order']||0);
+    if(!t||isNaN(w)||isNaN(y)||isNaN(pts)||!dayOrder) return;
+    if(!activeTesters.includes(t)) return;
+
+    const isWeekendTester = WEEKEND_TESTERS.includes(t);
+    if(isWknd !== isWeekendTester) return;
+
+    // For weekend shift daily tracker: match by calendar week directly
+    // so we capture ALL days including those outside normal shift days
+    let targetWeek = w;
+    if(isWknd) {
+      // Day orders 1,2,3 (Sun/Mon/Tue) belong to prev calendar week in weekly logic
+      // but for daily tracker we want to show them in their actual calendar week
+      // so we don't reassign — just check if the calendar week matches
+      if(WEEKEND_DAYS_NEXT.includes(dayOrder)) {
+        // These appear in week w in the CSV but belong to week w-1 in weekly tracker
+        // For daily tracker: show them under week w (their actual calendar week)
+        targetWeek = w;
+      }
+    }
+
+    if(targetWeek !== week || y !== year) return;
+
+    if(!result[t]) result[t] = {};
+    result[t][dayOrder] = Math.round(((result[t][dayOrder]||0) + pts)*100)/100;
+  });
+  return result;
+}
+
+function initDailyControls() {
+  const yrSel = document.getElementById('daily-year');
+  const allYears = [...new Set(historyRaw.map(r=>parseInt(r['Year']||r['year'])).filter(y=>!isNaN(y)))].sort((a,b)=>b-a);
+  yrSel.innerHTML = '';
+  allYears.forEach(y => { const o=document.createElement('option');o.value=y;o.textContent=y;yrSel.appendChild(o); });
+  yrSel.onchange = () => { populateDailyWeeks(); renderDaily(); };
+  populateDailyWeeks();
+}
+
+function populateDailyWeeks() {
+  const year = parseInt(document.getElementById('daily-year').value);
+  const wkSel = document.getElementById('daily-week');
+  let weeks;
+  if(dailyShift === 'weekend') {
+    const regWks = Object.keys(weeklyDataRegular[year]||{}).map(Number);
+    const wndWks = Object.keys(weeklyDataWeekend[year]||{}).map(Number);
+    weeks = [...new Set([...regWks,...wndWks])].filter(w=>w>=WEEKEND_CUTOFF_WEEK).sort((a,b)=>a-b);
+  } else {
+    weeks = Object.keys(weeklyDataRegular[year]||{}).map(Number).sort((a,b)=>a-b);
+  }
+  wkSel.innerHTML = '';
+  weeks.forEach(w => { const o=document.createElement('option');o.value=w;o.textContent='Week '+w;wkSel.appendChild(o); });
+  if(weeks.length) wkSel.value = weeks[weeks.length-1];
+}
+
+function setDailyShift(shift) {
+  dailyShift = shift;
+  document.getElementById('daily-toggle-regular').className = 'toggle-btn' + (shift==='regular'?' active':'');
+  document.getElementById('daily-toggle-weekend').className = 'toggle-btn' + (shift==='weekend'?' active-weekend':'');
+  populateDailyWeeks();
+  renderDaily();
+}
+
+function renderDaily() {
+  const year = parseInt(document.getElementById('daily-year').value);
+  const week = parseInt(document.getElementById('daily-week').value);
+  const wrap = document.getElementById('daily-table-wrap');
+  if(!year||!week){ wrap.innerHTML='<div style="padding:24px;color:var(--text3)">No data.</div>'; return; }
+
+  const dailyData = buildDailyData(year, week, dailyShift);
+  const testers = (dailyShift==='regular'?REGULAR_TESTERS:WEEKEND_TESTERS).filter(t=>activeTesters.includes(t));
+  // For weekend shift: show all day orders that have any data
+  // For regular: Mon-Fri (day orders 1-5)
+  let dayOrders;
+  if(dailyShift === 'weekend') {
+    const allDayOrders = [1,2,3,4,5,6,7];
+    dayOrders = allDayOrders.filter(d => testers.some(t => dailyData[t] && dailyData[t][d]));
+    if(!dayOrders.length) dayOrders = [5,6,7,1,2,3]; // fallback if no data yet
+  } else {
+    dayOrders = [1,2,3,4,5,6,7]; // Sun-Sat
+  }
+  const activeDays = dayOrders;
+
+  if(!testers.length){ wrap.innerHTML='<div style="padding:24px;color:var(--text3)">No testers for this shift.</div>'; return; }
+
+  // Day totals
+  const dayTotals = {};
+  dayOrders.forEach(d => {
+    dayTotals[d] = testers.reduce((s,t) => s + (dailyData[t]&&dailyData[t][d]||0), 0);
+  });
+
+  let html = '<div class="card-header" style="padding:14px 18px;border-bottom:1px solid var(--border);">'
+    + '<span class="card-title">Daily Tracker — ' + (dailyShift==='weekend'?'Weekend Shift':'Regular') + ' · Week ' + week + ', ' + year + '</span></div>'
+    + '<div style="overflow-x:auto;"><table class="data-table" style="min-width:600px;">'
+    + '<thead><tr><th>Tester</th>';
+  
+  dayOrders.forEach(d => {
+    html += '<th style="text-align:right">' + (DAY_NAMES[d]||'Day '+d) + '</th>';
+  });
+  html += '<th style="text-align:right">Total</th></tr></thead><tbody>';
+
+  testers.forEach(t => {
+    const rowData = dailyData[t] || {};
+    const total = dayOrders.reduce((s,d)=>s+(rowData[d]||0),0);
+    html += '<tr>'
+      + '<td><div class="tester-name"><div class="avatar" style="background:' + avatarColor(t) + '">' + initials(t) + '</div>' + t + '</div></td>';
+    dayOrders.forEach(d => {
+      const v = rowData[d]||0;
+      html += '<td style="text-align:right;font-family:var(--font-mono);font-size:12px;color:' + (v>0?'var(--text)':'var(--text3)') + '">' + (v>0?v:'—') + '</td>';
+    });
+    html += '<td style="text-align:right;font-weight:700;color:var(--accent2);font-family:var(--font-mono);font-size:12px;">' + Math.round(total*100)/100 + '</td>';
+    html += '</tr>';
+  });
+
+  // Totals row
+  html += '<tr style="border-top:2px solid var(--border);background:var(--bg3);">'
+    + '<td style="font-weight:700;color:var(--text2);">Daily Total</td>';
+  dayOrders.forEach(d => {
+    const v = Math.round(dayTotals[d]*100)/100;
+    html += '<td style="text-align:right;font-weight:700;font-family:var(--font-mono);font-size:12px;color:' + (v>0?'var(--accent2)':'var(--text3)') + '">' + (v>0?v:'—') + '</td>';
+  });
+  const grandTotal = Math.round(dayOrders.reduce((s,d)=>s+dayTotals[d],0)*100)/100;
+  html += '<td style="text-align:right;font-weight:700;font-family:var(--font-mono);font-size:12px;color:var(--green);">' + grandTotal + '</td></tr>';
+
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+// ── PUBLIC ROSTER (applied in public mode) ──
+function applyRosterIfPublic(){
+  if(!isPublicMode() || !rosterLoaded) return;
+  // Override tester lists from roster
+  const rosterTesters = Object.keys(rosterMap);
+  ALL_TESTERS = rosterTesters.slice();
+  WEEKEND_TESTERS = rosterTesters.filter(t => rosterMap[t].shift === 'weekend');
+  REGULAR_TESTERS = rosterTesters.filter(t => rosterMap[t].shift !== 'weekend');
+  activeTesters = rosterTesters.filter(t => rosterMap[t].active);
+}
+
+// ── PUBLIC READ-ONLY MODE ──
+function applyPublicMode() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('view') !== 'public') return;
+
+  document.body.classList.add('public-mode');
+
+  document.querySelectorAll('.nav-item').forEach(item => {
+    const onclick = item.getAttribute('onclick') || '';
+    if (!onclick.includes("'weekly'")) item.style.display = 'none';
+  });
+  document.querySelectorAll('.nav-section-label').forEach(l => l.style.display = 'none');
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const wk = document.getElementById('page-weekly');
+  if (wk) wk.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  document.querySelectorAll('.topbar button, .topbar .btn').forEach(b => {
+    if ((b.textContent||'').toLowerCase().includes('clear') || (b.getAttribute('onclick')||'').includes('customTargets')) {
+      b.style.display = 'none';
+    }
+  });
+
+  // Lock to the CURRENT week
+  const now = new Date();
+  const curWeek = getWeekNum(now);
+  const curYear = now.getFullYear();
+  const yearSel = document.getElementById('wk-year');
+  const weekSel = document.getElementById('wk-week');
+  if (yearSel) {
+    if (![...yearSel.options].some(o=>parseInt(o.value)===curYear)) {
+      const o=document.createElement('option'); o.value=curYear; o.textContent=curYear; yearSel.appendChild(o);
+    }
+    yearSel.value = curYear;
+    if (typeof onWkYearChange==='function') onWkYearChange();
+  }
+  if (weekSel) {
+    if (![...weekSel.options].some(o=>parseInt(o.value)===curWeek)) {
+      const o=document.createElement('option'); o.value=curWeek; o.textContent='Week '+curWeek; weekSel.appendChild(o);
+    }
+    weekSel.value = curWeek;
+    renderWeekly();
+  }
+  // Hide week/year selectors and shift toggle
+  document.querySelectorAll('#page-weekly .controls, #page-weekly .toggle-group').forEach(el => {
+    el.style.display = 'none';
+  });
+
+  const title = document.getElementById('topbar-title');
+  if (title) {
+    title.textContent = 'Weekly Tracker';
+    const badge = document.createElement('span');
+    badge.textContent = 'READ ONLY';
+    badge.style.cssText = 'margin-left:10px;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text3);border:1px solid var(--border);border-radius:20px;padding:2px 10px;vertical-align:middle;';
+    title.appendChild(badge);
+  }
+}
+
+(function() {
+  const style = document.createElement('style');
+  style.textContent = 'body.public-mode .target-input{pointer-events:none;background:transparent !important;border:none !important;color:var(--text) !important;text-align:left;padding-left:0;} body.public-mode .sidebar-footer{opacity:.7;}';
+  document.head.appendChild(style);
+})();
+
+// ── START ──
+Promise.resolve(loadAllData()).then(applyPublicMode).catch(applyPublicMode);
+</script>
+</body>
+</html>
