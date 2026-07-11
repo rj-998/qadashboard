@@ -1346,18 +1346,6 @@ function getWeekNum(d){
   return Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
 }
 
-// Weekend shift week runs Thu–Tue. A day that falls on Sun/Mon/Tue (day 0,1,2)
-// still belongs to the PREVIOUS calendar week's weekend cycle.
-function getWeekendWeekNum(d){
-  const day = d.getDay(); // 0=Sun,1=Mon,2=Tue,...,6=Sat
-  // Sun(0), Mon(1), Tue(2) belong to the weekend week that started the previous Thursday
-  if(day===0 || day===1 || day===2){
-    const shifted = new Date(d);
-    shifted.setDate(shifted.getDate() - 7); // go back to be safely in prior week's number
-    return getWeekNum(shifted);
-  }
-  return getWeekNum(d);
-}
 
 function getPeriodKey(d){
   if(claimsView==='monthly')
