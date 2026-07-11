@@ -2045,25 +2045,25 @@ function applyRosterIfPublic(){
 
 // ── PUBLIC READ-ONLY MODE ──
 function lockPublicWeek(){
-  const now = new Date();
-  const curYear = now.getFullYear();
-  // Use the correct week boundary depending on the active shift
-  const curWeek = (currentShift==='weekend') ? getWeekendWeekNum(now) : getWeekNum(now);
+  // Use the LATEST week that has data (same as normal mode default) — most reliable.
+  // Pick the most recent year first.
   const yearSel = document.getElementById('wk-year');
   const weekSel = document.getElementById('wk-week');
+
+  // Determine latest year available in data
+  const allYears = [...new Set([
+    ...Object.keys(weeklyDataRegular).map(Number),
+    ...Object.keys(weeklyDataWeekend).map(Number)
+  ])].filter(y=>!isNaN(y)).sort((a,b)=>b-a);
+  const latestYear = allYears[0] || new Date().getFullYear();
+
   if (yearSel) {
-    if (![...yearSel.options].some(o=>parseInt(o.value)===curYear)) {
-      const o=document.createElement('option'); o.value=curYear; o.textContent=curYear; yearSel.appendChild(o);
-    }
-    yearSel.value = curYear;
-    if (typeof onWkYearChange==='function') onWkYearChange();
+    yearSel.value = latestYear;
   }
-  if (weekSel) {
-    if (![...weekSel.options].some(o=>parseInt(o.value)===curWeek)) {
-      const o=document.createElement('option'); o.value=curWeek; o.textContent='Week '+curWeek; weekSel.appendChild(o);
-    }
-    weekSel.value = curWeek;
-  }
+
+  // Populate the week dropdown for that year/shift, which auto-selects the latest week
+  populateWkWeekSelect(latestYear);
+
   renderWeekly();
 }
 
