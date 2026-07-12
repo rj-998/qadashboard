@@ -825,14 +825,18 @@ function populateWkWeekSelect(year){
     populateWeekSelect('wk-week',year,weeklyDataRegular);
   } else {
     // For weekend shift, show all weeks from WEEKEND_CUTOFF_WEEK onwards
-    // using union of regular + weekend weeks so no weeks are missing
+    // (union so no weeks are missing for navigation), but DEFAULT to the latest
+    // week that actually has weekend data — so it stays on the ongoing weekend
+    // week instead of jumping ahead when regular-shift data for a new week arrives.
     const regWks = Object.keys(weeklyDataRegular[year]||{}).map(Number);
     const wndWks = Object.keys(weeklyDataWeekend[year]||{}).map(Number);
     const allWks = [...new Set([...regWks,...wndWks])].filter(w=>w>=WEEKEND_CUTOFF_WEEK).sort((a,b)=>a-b);
     const sel = document.getElementById('wk-week');
     sel.innerHTML='';
     allWks.forEach(w=>{const o=document.createElement('option');o.value=w;o.textContent='Week '+w;sel.appendChild(o);});
-    if(allWks.length) sel.value=allWks[allWks.length-1];
+    const wndOnly = wndWks.filter(w=>w>=WEEKEND_CUTOFF_WEEK).sort((a,b)=>a-b);
+    if(wndOnly.length) sel.value=wndOnly[wndOnly.length-1];
+    else if(allWks.length) sel.value=allWks[allWks.length-1];
   }
 }
 
