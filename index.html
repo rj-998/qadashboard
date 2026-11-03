@@ -69,6 +69,7 @@ select option{background:var(--bg2);}
 .toggle-btn{padding:5px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text2);transition:all .15s;font-family:var(--font);border:none;background:transparent;}
 .toggle-btn.active{background:var(--accent);color:#fff;}
 .toggle-btn.active-weekend{background:var(--orange);color:#fff;}
+.toggle-btn.active-midweek{background:#8b5cf6;color:#fff;}
 
 /* WEEKEND BANNER */
 .weekend-banner{background:linear-gradient(135deg,rgba(249,115,22,.07) 0%,transparent 70%);border:1px solid rgba(249,115,22,.2);border-radius:var(--r-lg);padding:10px 16px;font-size:12px;color:var(--orange);font-weight:600;display:flex;align-items:center;gap:8px;}
@@ -182,10 +183,6 @@ tbody tr:hover{background:rgba(255,255,255,.018);}
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       Daily Tracker
     </div>
-    <div class="nav-item" onclick="switchPage('claims',this)">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      Support Claims
-    </div>
     <div class="nav-section-label">Analytics</div>
     <div class="nav-item" onclick="switchPage('trends',this)">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -239,11 +236,12 @@ tbody tr:hover{background:rgba(255,255,255,.018);}
         <div class="toggle-group">
           <button class="toggle-btn active" id="toggle-regular" onclick="setShift('regular')">Regular</button>
           <button class="toggle-btn" id="toggle-weekend" onclick="setShift('weekend')">Weekend Shift</button>
+          <button class="toggle-btn" id="toggle-midweek" onclick="setShift('midweek')">Midweek Shift</button>
         </div>
       </div>
       <div id="weekend-note" style="display:none" class="weekend-banner">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Weekend shift week: Thu–Tue. Points span two calendar weeks.
+        <span id="weekend-note-text">Weekend shift week: Thu–Tue. Points span two calendar weeks.</span>
       </div>
       <div id="wk-stats" class="stat-strip"></div>
       <div id="wk-banner" class="week-banner"></div>
@@ -263,36 +261,10 @@ tbody tr:hover{background:rgba(255,255,255,.018);}
         <div class="toggle-group">
           <button class="toggle-btn active" id="ind-toggle-regular" onclick="setIndShift('regular')">Regular</button>
           <button class="toggle-btn" id="ind-toggle-weekend" onclick="setIndShift('weekend')">Weekend Shift</button>
+          <button class="toggle-btn" id="ind-toggle-midweek" onclick="setIndShift('midweek')">Midweek Shift</button>
         </div>
       </div>
       <div id="ind-grid" class="tester-grid"></div>
-    </div>
-
-    <!-- SUPPORT CLAIMS -->
-    <div class="page" id="page-claims">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <div class="toggle-group">
-            <button class="toggle-btn active" id="claims-toggle-monthly" onclick="setClaimsView('monthly')">Monthly</button>
-            <button class="toggle-btn" id="claims-toggle-weekly" onclick="setClaimsView('weekly')">Weekly</button>
-          </div>
-          <div class="controls" id="claims-controls"></div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;" id="claims-status-filters"></div>
-      </div>
-      <div id="claims-stats" class="stat-strip"></div>
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title" id="claims-table-title">Monthly claims tracker</span>
-          <span style="font-size:11px;color:var(--text3)">From March 1, 2026 · sorted by Discord/Slack date</span>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead id="claims-thead"></thead>
-            <tbody id="claims-body"></tbody>
-          </table>
-        </div>
-      </div>
     </div>
 
     <!-- TRENDS -->
@@ -346,6 +318,7 @@ tbody tr:hover{background:rgba(255,255,255,.018);}
         <div class="toggle-group" style="margin-left:8px;">
           <button class="toggle-btn active" id="daily-toggle-regular" onclick="setDailyShift('regular')">Regular</button>
           <button class="toggle-btn" id="daily-toggle-weekend" onclick="setDailyShift('weekend')">Weekend ☽</button>
+          <button class="toggle-btn" id="daily-toggle-midweek" onclick="setDailyShift('midweek')">Midweek ◑</button>
         </div>
       </div>
       <div id="daily-table-wrap" class="card" style="overflow-x:auto;"></div>
@@ -394,22 +367,97 @@ const URL_HISTORY = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQmpijJxKw
 const URL_QUALITY = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQmpijJxKw4NgF_lZdpiPFIxdxq43YPK8ZJtkfJLVz7UYrbCSe_9LKP08DZKOjZvyRMI9yYV9hgbuT/pub?gid=639826145&single=true&output=csv';
 const URL_ROSTER = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQmpijJxKw4NgF_lZdpiPFIxdxq43YPK8ZJtkfJLVz7UYrbCSe_9LKP08DZKOjZvyRMI9yYV9hgbuT/pub?gid=1027472914&single=true&output=csv';
 const URL_TARGETS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQmpijJxKw4NgF_lZdpiPFIxdxq43YPK8ZJtkfJLVz7UYrbCSe_9LKP08DZKOjZvyRMI9yYV9hgbuT/pub?gid=1860802484&single=true&output=csv';
-const URL_SUPPORT = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQmpijJxKw4NgF_lZdpiPFIxdxq43YPK8ZJtkfJLVz7UYrbCSe_9LKP08DZKOjZvyRMI9yYV9hgbuT/pub?gid=767607684&single=true&output=csv';
 
 let WEEKEND_TESTERS = JSON.parse(localStorage.getItem('qa_weekendTesters') || 'null') || ['jayr2388','wand_rosa','wand_aiden'];
+let MIDWEEK_TESTERS = JSON.parse(localStorage.getItem('qa_midweekTesters') || 'null') || [];
 const WEEKEND_CUTOFF_WEEK = 16;
 const WEEKEND_DAYS_CURRENT = [5,6,7];
 const WEEKEND_DAYS_NEXT    = [1,2,3];
+// Midweek shift week: Tue–Sun. Tue–Sat count in their own calendar week, Sunday in the week before.
+// Mondays fall outside the shift week and are not counted (as Wednesdays are for the weekend shift).
+const MIDWEEK_DAYS_CURRENT = [3,4,5,6,7];
+const MIDWEEK_DAYS_NEXT    = [1];
+// When a tester changes shift: { tester: [{shift, from:'YYYY-MM-DD'}] } in US Eastern dates, oldest first.
+// Rows dated on or after an entry's date use that entry's shift; earlier weeks keep the shift they had.
+// Built-in shift changes, used by the public view and as the starting point in edit mode.
+// To record a future change for public visitors, add an entry here (or change it in Settings with ?edit=).
+const DEFAULT_SHIFT_HISTORY = {
+  wand_sebastian: [{ shift: 'weekend', from: '' }, { shift: 'midweek', from: '2026-11-03' }]
+};
+const _editParam = new URLSearchParams(window.location.search).get('edit');
+let SHIFT_HISTORY = Object.assign({}, JSON.parse(JSON.stringify(DEFAULT_SHIFT_HISTORY)),
+  _editParam === 'Arzaros998' ? (JSON.parse(localStorage.getItem('qa_shiftHistory') || 'null') || {}) : {});
+const SHIFT_LABEL = { regular: 'Regular', weekend: 'Weekend Shift', midweek: 'Midweek Shift' };
+const SHIFT_MARK  = { regular: '', weekend: ' ☽', midweek: ' ◑' };
+function currentShiftOf(t){ return MIDWEEK_TESTERS.includes(t) ? 'midweek' : WEEKEND_TESTERS.includes(t) ? 'weekend' : 'regular'; }
+function shiftOn(t, iso){
+  const h = SHIFT_HISTORY[t];
+  if(!h || !h.length || !iso) return currentShiftOf(t);
+  let s = h[0].shift;
+  h.forEach(e => { if(!e.from || e.from <= iso) s = e.shift; });
+  return s;
+}
+const _etDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+function todayET(){ return _etDay.format(new Date()); }
+function rowDateISO(r){ const m = String(r['Date'] || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); return m ? m[3] + '-' + m[1].padStart(2, '0') + '-' + m[2].padStart(2, '0') : ''; }
+// Sunday that starts calendar week w of year y (WEEKNUM numbering, as in the sheet)
+function weekSundayISO(y, w){ const j = new Date(Date.UTC(y, 0, 1)); return new Date(j.getTime() + ((w - 1) * 7 - j.getUTCDay()) * 864e5).toISOString().slice(0, 10); }
+function addDaysISO(d, n){ return new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10); }
+// First day of a shift's week w: Sunday (regular), Thursday (weekend), Tuesday (midweek)
+function shiftWeekStart(shift, y, w){ if(!(y > 0 && w > 0)) return ''; return addDaysISO(weekSundayISO(y, w), shift === 'weekend' ? 4 : shift === 'midweek' ? 2 : 0); }
+function weekOfISO(d){ const y = +d.slice(0, 4), j = Date.UTC(y, 0, 1); return Math.floor(((Date.parse(d + 'T00:00:00Z') - j) / 864e5 + new Date(j).getUTCDay()) / 7) + 1; }
+function WDS(){ return { regular: weeklyDataRegular, weekend: weeklyDataWeekend, midweek: weeklyDataMidweek }; }
+// Active testers on a shift for a given week: on that shift when the shift week starts, or with points recorded under it
+function testersOnShift(shift, y, w){
+  const start = shiftWeekStart(shift, y, w), data = ((WDS()[shift] || {})[y] || {})[w] || {};
+  return ALL_TESTERS.filter(t => activeTesters.includes(t) && (shiftOn(t, start) === shift || data[t]));
+}
+// Which shift a tester's week w counts under: the one holding their points, else the shift they were on
+function shiftForWeek(t, y, w){
+  for(const sh of ['midweek', 'weekend', 'regular']) if((((WDS()[sh] || {})[y] || {})[w] || {})[t]) return sh;
+  const sh = shiftOn(t, addDaysISO(weekSundayISO(y, w), 3));
+  return sh === 'weekend' && !(y >= 2026 && w >= WEEKEND_CUTOFF_WEEK) ? 'regular' : sh;
+}
+function getShiftLabel(shift, w, y){
+  if(shift === 'regular' || !(y > 0 && w > 0)) return getWeekLabel(w, y);
+  const a = shiftWeekStart(shift, y, w), b = addDaysISO(a, 5);
+  const f = (d) => new Date(d + 'T12:00:00Z').toLocaleString('default', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return `${SHIFT_LABEL[shift]} · ${f(a)} – ${f(b)} · Week ${w}, ${y}`;
+}
+// Put each tester with a shift history on the shift they are on today (US Eastern)
+function syncShiftsFromHistory(){
+  const today = todayET();
+  Object.keys(SHIFT_HISTORY).forEach(t => {
+    const sh = shiftOn(t, today);
+    WEEKEND_TESTERS = WEEKEND_TESTERS.filter(x => x !== t);
+    MIDWEEK_TESTERS = MIDWEEK_TESTERS.filter(x => x !== t);
+    if(sh === 'weekend') WEEKEND_TESTERS.push(t);
+    if(sh === 'midweek') MIDWEEK_TESTERS.push(t);
+  });
+  REGULAR_TESTERS = ALL_TESTERS.filter(t=>currentShiftOf(t)==='regular');
+}
+function midweekStartWeek(y){
+  const froms = [];
+  Object.values(SHIFT_HISTORY).forEach(h => h.forEach(e => { if(e.shift === 'midweek' && e.from && +e.from.slice(0, 4) === y) froms.push(weekOfISO(e.from)); }));
+  const have = Object.keys(weeklyDataMidweek[y] || {}).map(Number);
+  const all = froms.concat(have);
+  return all.length ? Math.min(...all) : null;
+}
 
 let ALL_TESTERS = JSON.parse(localStorage.getItem('qa_allTesters') || 'null') || ['AntiMatter25','Bobdudeman','Cheszter','Izzyhan','jayr2388','JustineG','kevkev16','Kyleb2024','LizVamp','lndcstro','Sephyyy','wand_aiden','wand_alexg','wand_rosa'];
-let REGULAR_TESTERS = ALL_TESTERS.filter(t=>!WEEKEND_TESTERS.includes(t));
+let REGULAR_TESTERS = ALL_TESTERS.filter(t=>currentShiftOf(t)==='regular');
 let activeTesters = JSON.parse(localStorage.getItem('qa_activeTesters') || 'null') || [...ALL_TESTERS];
+syncShiftsFromHistory();
 
 function saveTesterSettings(){
+  // Public (read-only) visitors never write settings; the roster drives their view
+  if(isPublicMode()){ REGULAR_TESTERS = ALL_TESTERS.filter(t=>currentShiftOf(t)==='regular'); return; }
   localStorage.setItem('qa_allTesters', JSON.stringify(ALL_TESTERS));
   localStorage.setItem('qa_weekendTesters', JSON.stringify(WEEKEND_TESTERS));
   localStorage.setItem('qa_activeTesters', JSON.stringify(activeTesters));
-  REGULAR_TESTERS = ALL_TESTERS.filter(t=>!WEEKEND_TESTERS.includes(t));
+  localStorage.setItem('qa_midweekTesters', JSON.stringify(MIDWEEK_TESTERS));
+  localStorage.setItem('qa_shiftHistory', JSON.stringify(SHIFT_HISTORY));
+  REGULAR_TESTERS = ALL_TESTERS.filter(t=>currentShiftOf(t)==='regular');
 }
 function saveActiveTesters(){ saveTesterSettings(); }
 function isActive(t){ return activeTesters.includes(t); }
@@ -438,7 +486,7 @@ function deriveTesterList(){
     ALL_TESTERS.forEach(t => { if(!activeTesters.includes(t)) activeTesters.push(t); });
   }
 
-  REGULAR_TESTERS = ALL_TESTERS.filter(t=>!WEEKEND_TESTERS.includes(t));
+  REGULAR_TESTERS = ALL_TESTERS.filter(t=>currentShiftOf(t)==='regular');
   saveTesterSettings();
 }
 const CUTOFF_YEAR=2026, CUTOFF_MONTH=3;
@@ -456,13 +504,10 @@ const REASON_COLORS={
 };
 const ERR_TYPES=['False Negative','False Positive','Human Error'];
 const ERR_COLORS=['#0ea5e9','#ef4444','#f59e0b'];
-const PAGE_TITLES={weekly:'Weekly Tracker',individual:'Individual View',claims:'Support Claims Tracker',trends:'Game Trends',errors:'Reporting Errors',insights:'Tester Insights',daily:'Daily Tracker',export:'Export Report',settings:'Settings'};
-const CLAIM_STATUSES=['In Queue','To be Added','Confirmed User Complaint','Rejected User Complaint','Need something from Support','Support claim redundant','Tested but no report'];
-const CLAIM_COLORS={'In Queue':'#3b82f6','To be Added':'#0ea5e9','Confirmed User Complaint':'#eab308','Rejected User Complaint':'#ef4444','Need something from Support':'#f97316','Support claim redundant':'#8b5cf6','Tested but no report':'#22c55e'};
-const CLAIM_SHORT={'In Queue':'In Queue','To be Added':'To be Added','Confirmed User Complaint':'Confirmed','Rejected User Complaint':'Rejected','Need something from Support':'Needs Support','Support claim redundant':'Redundant','Tested but no report':'Tested/No Report'};
+const PAGE_TITLES={weekly:'Weekly Tracker',individual:'Individual View',trends:'Game Trends',errors:'Reporting Errors',insights:'Tester Insights',daily:'Daily Tracker',export:'Export Report',settings:'Settings'};
 
 // ── STATE ──
-let weeklyDataRegular={}, weeklyDataWeekend={}, historyRaw=[], qualityRaw=[], claimsRaw=[];
+let weeklyDataRegular={}, weeklyDataWeekend={}, weeklyDataMidweek={}, historyRaw=[], qualityRaw=[];
 // targetsMap[year][week][tester] = target number (from CSV, overrides default)
 let targetsMap={};
 // Public roster from CSV: rosterMap[tester] = {active, shift, target}
@@ -476,7 +521,8 @@ function parseRosterCSV(text){
     const tester = (r['Tester']||r['tester']||'').trim();
     if(!tester) return;
     const active = /^y/i.test((r['Active']||r['active']||'').trim());
-    const shift = /weekend/i.test((r['Shift']||r['shift']||'').trim()) ? 'weekend' : 'regular';
+    const rawShift = (r['Shift']||r['shift']||'').trim();
+    const shift = /midweek/i.test(rawShift) ? 'midweek' : /weekend/i.test(rawShift) ? 'weekend' : 'regular';
     const rawTarget = (r['Target']!==undefined?r['Target']:r['target']);
     const parsedTarget = parseFloat(rawTarget);
     const target = isNaN(parsedTarget) ? 36 : parsedTarget; // allow 0
@@ -628,6 +674,8 @@ function getTarget(tester,week,year){
 function processHistory(){
   weeklyDataRegular={};
   weeklyDataWeekend={};
+  weeklyDataMidweek={};
+  const midweekAssign={};
 
   // Build weekend lookup: for each raw row that belongs to a weekend tester,
   // figure out which "custom week" it belongs to.
@@ -647,10 +695,19 @@ function processHistory(){
     const afterCutoff=(year>CUTOFF_YEAR)||(year===CUTOFF_YEAR&&month>=CUTOFF_MONTH);
     if(afterCutoff&&!ALL_TESTERS.includes(tester))return;
 
-    const isWeekendTester=WEEKEND_TESTERS.includes(tester);
-    const useWeekendLogic=isWeekendTester&&week>=WEEKEND_CUTOFF_WEEK&&year>=2026;
+    // The tester's shift on the day of this test (shift changes keep earlier weeks on the old shift)
+    const shiftNow=shiftOn(tester,rowDateISO(r));
+    const useWeekendLogic=shiftNow==='weekend'&&week>=WEEKEND_CUTOFF_WEEK&&year>=2026;
 
-    if(useWeekendLogic){
+    if(shiftNow==='midweek'&&year>=2026){
+      let mw=null;
+      if(MIDWEEK_DAYS_CURRENT.includes(dayOrder)) mw=week;          // Tue–Sat
+      else if(MIDWEEK_DAYS_NEXT.includes(dayOrder)) mw=week-1;      // Sunday closes the week before
+      if(mw===null||mw<1) return;                                    // Monday: outside the shift week
+      if(!midweekAssign[year])midweekAssign[year]={};
+      if(!midweekAssign[year][mw])midweekAssign[year][mw]={};
+      midweekAssign[year][mw][tester]=Math.round(((midweekAssign[year][mw][tester]||0)+pts)*100)/100;
+    } else if(useWeekendLogic){
       // Determine which custom week this row belongs to
       let customWeek=null;
       if(WEEKEND_DAYS_CURRENT.includes(dayOrder)){
@@ -688,10 +745,18 @@ function processHistory(){
     });
   });
 
+  Object.keys(midweekAssign).forEach(yr=>{
+    const y=parseInt(yr); weeklyDataMidweek[y]=weeklyDataMidweek[y]||{};
+    Object.keys(midweekAssign[y]).forEach(wk=>{
+      const w=parseInt(wk); weeklyDataMidweek[y][w]=weeklyDataMidweek[y][w]||{};
+      Object.keys(midweekAssign[y][w]).forEach(t=>{ weeklyDataMidweek[y][w][t]={p:midweekAssign[y][w][t]}; });
+    });
+  });
+
   // Targets are always resolved live via getTarget() at render time
 
-  // Mark latest week as live in both datasets
-  [weeklyDataRegular, weeklyDataWeekend].forEach(wd=>{
+  // Mark latest week as live in each shift's data
+  [weeklyDataRegular, weeklyDataWeekend, weeklyDataMidweek].forEach(wd=>{
     const years=Object.keys(wd).map(Number).sort((a,b)=>b-a);
     if(years.length){
       const ly=years[0],lw=Math.max(...Object.keys(wd[ly]).map(Number));
@@ -705,11 +770,10 @@ async function loadAllData(){
   showLoading('Fetching live data from Google Sheets…');
   document.getElementById('live-label').textContent='Loading…';
   try{
-    const [histText,qualText,targText,claimsText,rosterText]=await Promise.all([
+    const [histText,qualText,targText,rosterText]=await Promise.all([
       fetchCSV(URL_HISTORY),
       fetchCSV(URL_QUALITY),
       fetchCSV(URL_TARGETS),
-      fetchCSV(URL_SUPPORT),
       fetchCSV(URL_ROSTER).catch(()=>'')
     ]);
     historyRaw=parseCSV(histText);
@@ -722,41 +786,6 @@ async function loadAllData(){
     deriveTesterList();
     qualityRaw=parseCSV(qualText);
     targetsMap=parseTargetsCSV(targText);
-    // Split CSV respecting quoted multiline fields, then index by column
-    // Col B=1 Game Title, Col E=4 Discord Date, Col K=10 Claim Status
-    function splitCSVRows(text) {
-      const rows = [];
-      let cur = '', inQ = false;
-      for(let i=0; i<text.length; i++){
-        const c = text[i];
-        if(c==='"' && !inQ){ inQ=true; }
-        else if(c==='"' && inQ && text[i+1]==='"'){ cur+='"'; i++; }
-        else if(c==='"' && inQ){ inQ=false; }
-        else if((c==='\n') && !inQ){ rows.push(cur); cur=''; }
-        else { cur+=c; }
-      }
-      if(cur) rows.push(cur);
-      return rows;
-    }
-    const claimsRows = splitCSVRows(claimsText);
-    const parsedClaims = [];
-    for(let i=1; i<claimsRows.length; i++){
-      const cols = splitCSVLine(claimsRows[i]);
-      const gameTitle = (cols[1]||'').trim();
-      const discordDate = (cols[4]||'').trim();
-      const claimStatus = (cols[10]||'').trim();
-      if(!gameTitle || !discordDate || !claimStatus) continue;
-      if(claimStatus === 'Link' || gameTitle === 'Link') continue;
-      const d = parseClaimDate(discordDate);
-      if(!d || d < new Date(2026, 2, 1)) continue;
-      parsedClaims.push({
-        'Game Title': gameTitle,
-        'Discord / Slack Thread Date': discordDate,
-        'Claim Status': claimStatus,
-      });
-    }
-    claimsRaw = parsedClaims;
-    console.log('[Claims] rows:', claimsRaw.length);
     if(!historyRaw.length)throw new Error('Test History sheet returned no rows.');
     processHistory();
     initUI();
@@ -776,7 +805,8 @@ async function loadAllData(){
 function initUI(){
   const regYears=Object.keys(weeklyDataRegular).map(Number).sort((a,b)=>b-a);
   const wkYears=Object.keys(weeklyDataWeekend).map(Number).sort((a,b)=>b-a);
-  const allYears=[...new Set([...regYears,...wkYears])].sort((a,b)=>b-a);
+  const mwYears=Object.keys(weeklyDataMidweek).map(Number);
+  const allYears=[...new Set([...regYears,...wkYears,...mwYears])].sort((a,b)=>b-a);
 
   ['wk-year','tr-year','ins-year'].forEach(id=>{
     const s=document.getElementById(id);s.innerHTML='';
@@ -791,7 +821,7 @@ function initUI(){
     const s=document.getElementById(id);
     while(s.options.length>(id==='tr-tester'?1:0))s.remove(id==='tr-tester'?1:0);
     if(id==='ins-tester')s.innerHTML='';
-    ALL_TESTERS.filter(t=>activeTesters.includes(t)).forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t+(WEEKEND_TESTERS.includes(t)?' ☽':'');s.appendChild(o);});
+    ALL_TESTERS.filter(t=>activeTesters.includes(t)).forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t+SHIFT_MARK[currentShiftOf(t)];s.appendChild(o);});
   });
 
   const errYears=[...new Set(qualityRaw.map(r=>parseInt(r['Year']||r['year'])).filter(y=>!isNaN(y)))].sort((a,b)=>a-b);
@@ -806,7 +836,6 @@ function initUI(){
 
   renderWeekly();
   renderIndividual();
-  initClaims();
   renderTrends();
   renderErrors();
   renderInsights();
@@ -824,18 +853,18 @@ function populateWkWeekSelect(year){
   if(currentShift==='regular'){
     populateWeekSelect('wk-week',year,weeklyDataRegular);
   } else {
-    // For weekend shift, show all weeks from WEEKEND_CUTOFF_WEEK onwards
-    // (union so no weeks are missing for navigation), but DEFAULT to the latest
-    // week that actually has weekend data — so it stays on the ongoing weekend
-    // week instead of jumping ahead when regular-shift data for a new week arrives.
+    // For weekend and midweek shifts, show every week from when the shift began,
+    // using the union with regular weeks so no weeks are missing
     const regWks = Object.keys(weeklyDataRegular[year]||{}).map(Number);
-    const wndWks = Object.keys(weeklyDataWeekend[year]||{}).map(Number);
-    const allWks = [...new Set([...regWks,...wndWks])].filter(w=>w>=WEEKEND_CUTOFF_WEEK).sort((a,b)=>a-b);
+    const shWks = Object.keys(WDS()[currentShift][year]||{}).map(Number);
+    const from = currentShift==='weekend' ? WEEKEND_CUTOFF_WEEK : midweekStartWeek(year);
+    const allWks = from===null ? [] : [...new Set([...regWks,...shWks])].filter(w=>w>=from).sort((a,b)=>a-b);
     const sel = document.getElementById('wk-week');
     sel.innerHTML='';
     allWks.forEach(w=>{const o=document.createElement('option');o.value=w;o.textContent='Week '+w;sel.appendChild(o);});
-    const wndOnly = wndWks.filter(w=>w>=WEEKEND_CUTOFF_WEEK).sort((a,b)=>a-b);
-    if(wndOnly.length) sel.value=wndOnly[wndOnly.length-1];
+    // Default to the latest week that has this shift's data, so it stays on the ongoing shift week
+    const shOnly = from===null ? [] : shWks.filter(w=>w>=from).sort((a,b)=>a-b);
+    if(shOnly.length) sel.value=shOnly[shOnly.length-1];
     else if(allWks.length) sel.value=allWks[allWks.length-1];
   }
 }
@@ -845,7 +874,11 @@ function setShift(shift){
   currentShift=shift;
   document.getElementById('toggle-regular').className='toggle-btn'+(shift==='regular'?' active':'');
   document.getElementById('toggle-weekend').className='toggle-btn'+(shift==='weekend'?' active-weekend':'');
-  document.getElementById('weekend-note').style.display=shift==='weekend'?'flex':'none';
+  document.getElementById('toggle-midweek').className='toggle-btn'+(shift==='midweek'?' active-midweek':'');
+  document.getElementById('weekend-note').style.display=shift!=='regular'?'flex':'none';
+  document.getElementById('weekend-note-text').textContent = shift==='midweek'
+    ? 'Midweek shift week: Tue–Sun. Points span two calendar weeks; Mondays are outside the shift and not counted.'
+    : 'Weekend shift week: Thu–Tue. Points span two calendar weeks.';
   if(isPublicMode()){
     // Public: lock to the correct current week for this shift, don't expose the selector
     lockPublicWeek();
@@ -859,6 +892,7 @@ function setIndShift(shift){
   indShift=shift;
   document.getElementById('ind-toggle-regular').className='toggle-btn'+(shift==='regular'?' active':'');
   document.getElementById('ind-toggle-weekend').className='toggle-btn'+(shift==='weekend'?' active-weekend':'');
+  document.getElementById('ind-toggle-midweek').className='toggle-btn'+(shift==='midweek'?' active-midweek':'');
   renderIndividual();
 }
 
@@ -884,15 +918,14 @@ function onInsYearChange(){populateWeekSelect('ins-week',parseInt(document.getEl
 function renderWeekly(){
   const year=parseInt(document.getElementById('wk-year').value);
   const week=parseInt(document.getElementById('wk-week').value);
-  const wd=currentShift==='regular'?weeklyDataRegular:weeklyDataWeekend;
-  const testers=(currentShift==='regular'?REGULAR_TESTERS:WEEKEND_TESTERS).filter(t=>activeTesters.includes(t));
+  const wd=WDS()[currentShift];
+  const testers=testersOnShift(currentShift,year,week);
   const data=(wd[year]||{})[week]||{};
-  const isWeekend=currentShift==='weekend';
   const isLive=Object.values(data).some(r=>r.live);
 
-  document.getElementById('wk-table-title').textContent=`Points tracker — ${isWeekend?'Weekend shift':'Regular testers'}`;
+  document.getElementById('wk-table-title').textContent=`Points tracker — ${currentShift==='regular'?'Regular testers':SHIFT_LABEL[currentShift].replace(' Shift',' shift')}`;
   document.getElementById('wk-banner').innerHTML=`
-    <div><div class="week-banner-text">${isWeekend?getWeekendLabel(week,year):getWeekLabel(week,year)}</div>
+    <div><div class="week-banner-text">${getShiftLabel(currentShift,week,year)}</div>
     <div class="week-banner-sub">${isLive?'Week in progress — points updating live':'Completed week'}</div></div>
     ${isLive?'<div class="live-badge"><div class="live-dot"></div>Live</div>':''}`;
 
@@ -903,13 +936,13 @@ function renderWeekly(){
   // Combined stats across BOTH shifts for the selected week/year
   const regData=(weeklyDataRegular[year]||{})[week]||{};
   const wkndData=(weeklyDataWeekend[year]||{})[week]||{};
+  const mwData=(weeklyDataMidweek[year]||{})[week]||{};
 
   // Total points — all testers both shifts
   let combinedTotalPts=0;
   ALL_TESTERS.filter(t=>activeTesters.includes(t)).forEach(t=>{
-    const regRow=regData[t]; const wkRow=wkndData[t];
-    if(regRow) combinedTotalPts+=regRow.p;
-    else if(wkRow) combinedTotalPts+=wkRow.p;
+    const row=regData[t]||wkndData[t]||mwData[t];
+    if(row) combinedTotalPts+=row.p;
   });
   combinedTotalPts=Math.round(combinedTotalPts*100)/100;
 
@@ -923,14 +956,14 @@ function renderWeekly(){
   const stillNeeded=Math.max(0,combinedTotalTarget-combinedTotalPts);
 
   // Average points per tester across both shifts (only testers with data)
-  const testersWithData=ALL_TESTERS.filter(t=>activeTesters.includes(t)&&(regData[t]||wkndData[t]));
+  const testersWithData=ALL_TESTERS.filter(t=>activeTesters.includes(t)&&(regData[t]||wkndData[t]||mwData[t]));
   const avgPtsCombined=testersWithData.length?(combinedTotalPts/testersWithData.length).toFixed(1):0;
 
   document.getElementById('wk-stats').innerHTML=`
     <div class="stat-card"><div class="stat-label">Total points</div><div class="stat-value c-accent">${combinedTotalPts}</div><div class="stat-sub">across ${activeTesters.length} active testers</div></div>
     <div class="stat-card"><div class="stat-label">Target points</div><div class="stat-value" style="color:var(--text2)">${combinedTotalTarget}</div><div class="stat-sub">combined team target</div></div>
     <div class="stat-card"><div class="stat-label">Still needed</div><div class="stat-value ${stillNeeded===0?'c-green':'c-yellow'}">${stillNeeded}</div><div class="stat-sub">${stillNeeded===0?'target reached':'to hit team target'}</div></div>
-    <div class="stat-card"><div class="stat-label">Avg per tester</div><div class="stat-value c-accent">${avgPtsCombined}</div><div class="stat-sub">incl. weekend shift</div></div>`;
+    <div class="stat-card"><div class="stat-label">Avg per tester</div><div class="stat-value c-accent">${avgPtsCombined}</div><div class="stat-sub">incl. weekend and midweek shifts</div></div>`;
 
   const tbody=document.getElementById('wk-body');tbody.innerHTML='';
   // Show all relevant testers, even those with no data yet (0 pts)
@@ -957,38 +990,22 @@ function renderWeekly(){
 
 // ── INDIVIDUAL ──
 function getAllRowsForTester(tester){
-  const isWeekend=WEEKEND_TESTERS.includes(tester);
+  // Every week the tester has points in, under whichever shift counted them (a shift change keeps both)
   const rows=[];
-  const checkWd=(wd)=>{
-    Object.keys(wd).map(Number).sort((a,b)=>a-b).forEach(yr=>{
-      Object.keys(wd[yr]).map(Number).sort((a,b)=>a-b).forEach(wk=>{
-        if(wd[yr][wk][tester])rows.push({week:wk,year:yr,...wd[yr][wk][tester],isWeekend:true});
+  Object.entries(WDS()).forEach(([shift,wd])=>{
+    Object.keys(wd).map(Number).forEach(yr=>{
+      Object.keys(wd[yr]).map(Number).forEach(wk=>{
+        if(wd[yr][wk][tester])rows.push({week:wk,year:yr,...wd[yr][wk][tester],shift,isWeekend:shift==='weekend'});
       });
     });
-  };
-  // For weekend testers, use weekend data from week 16+; regular data before that
-  if(isWeekend){
-    // Regular data (pre-cutoff weeks)
-    Object.keys(weeklyDataRegular).map(Number).sort((a,b)=>a-b).forEach(yr=>{
-      Object.keys(weeklyDataRegular[yr]).map(Number).sort((a,b)=>a-b).forEach(wk=>{
-        if(weeklyDataRegular[yr][wk][tester]&&!(yr>=2026&&wk>=WEEKEND_CUTOFF_WEEK))
-          rows.push({week:wk,year:yr,...weeklyDataRegular[yr][wk][tester],isWeekend:false});
-      });
-    });
-    checkWd(weeklyDataWeekend);
-  } else {
-    Object.keys(weeklyDataRegular).map(Number).sort((a,b)=>a-b).forEach(yr=>{
-      Object.keys(weeklyDataRegular[yr]).map(Number).sort((a,b)=>a-b).forEach(wk=>{
-        if(weeklyDataRegular[yr][wk][tester])rows.push({week:wk,year:yr,...weeklyDataRegular[yr][wk][tester],isWeekend:false});
-      });
-    });
-  }
-  return rows.sort((a,b)=>a.year!==b.year?a.year-b.year:a.week-b.week);
+  });
+  const order={regular:0,weekend:1,midweek:2};
+  return rows.sort((a,b)=>a.year!==b.year?a.year-b.year:a.week!==b.week?a.week-b.week:order[a.shift]-order[b.shift]);
 }
 
 function renderIndividual(){
   const grid=document.getElementById('ind-grid');grid.innerHTML='';
-  const testers=(indShift==='regular'?REGULAR_TESTERS:WEEKEND_TESTERS).filter(t=>activeTesters.includes(t));
+  const testers=ALL_TESTERS.filter(t=>activeTesters.includes(t)&&currentShiftOf(t)===indShift);
   testers.forEach(tester=>{
     const rows=getAllRowsForTester(tester);if(!rows.length)return;
     const card=document.createElement('div');card.className='tester-card';
@@ -998,11 +1015,13 @@ function renderIndividual(){
       const barC=r.p>=dynTarget?'var(--green)':r.live?'var(--blue)':r.p>=dynTarget*0.9?'var(--yellow)':'var(--red)';
       const iconC=r.p>=dynTarget?'var(--green)':r.live?'var(--blue)':r.p>=dynTarget*0.9?'var(--yellow)':'var(--red)';
       const icon=dynTarget===0?'—':r.p>=dynTarget?'✓':r.live?'…':'✗';
-      const wkLabel=`Wk${r.week}'${String(r.year).slice(2)}${r.isWeekend?' ☽':''}`;
+      const wkLabel=`Wk${r.week}'${String(r.year).slice(2)}${SHIFT_MARK[r.shift]||''}`;
       return `<tr><td style="color:var(--text3)">${wkLabel}</td><td style="font-weight:700">${r.p}</td><td style="color:var(--text3)">${dynTarget}</td>
         <td><div style="display:flex;align-items:center;gap:6px"><div class="progress-wrap" style="width:48px"><div class="progress-bar" style="width:${pct}%;background:${barC}"></div></div><span style="color:${iconC};font-size:12px;font-weight:700">${icon}</span></div></td></tr>`;
     }).join('');
-    const wkBadge=WEEKEND_TESTERS.includes(tester)?'<span style="font-size:10px;color:var(--orange);background:var(--orange-bg);border:1px solid rgba(249,115,22,.2);padding:2px 6px;border-radius:10px;margin-left:6px">Weekend</span>':'';
+    const curSh=currentShiftOf(tester);
+    const wkBadge=curSh==='weekend'?'<span style="font-size:10px;color:var(--orange);background:var(--orange-bg);border:1px solid rgba(249,115,22,.2);padding:2px 6px;border-radius:10px;margin-left:6px">Weekend</span>'
+      :curSh==='midweek'?'<span style="font-size:10px;color:#a78bfa;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);padding:2px 6px;border-radius:10px;margin-left:6px">Midweek</span>':'';
     card.innerHTML=`<div class="tester-card-header"><div class="tester-card-name"><div class="avatar" style="background:${avatarColor(tester)}">${initials(tester)}</div>${tester}${wkBadge}</div><span style="font-size:11px;color:var(--text3)">${rows.length} weeks</span></div>
       <div class="tester-card-body"><table><thead><tr><th>Week</th><th>Pts</th><th>Target</th><th>Progress</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
     grid.appendChild(card);
@@ -1127,8 +1146,9 @@ function renderInsights(){
   const tester=document.getElementById('ins-tester').value;
   const year=parseInt(document.getElementById('ins-year').value);
   const week=parseInt(document.getElementById('ins-week').value);
-  const isWknd=WEEKEND_TESTERS.includes(tester)&&week>=WEEKEND_CUTOFF_WEEK&&year>=2026;
-  const wd=isWknd?weeklyDataWeekend:weeklyDataRegular;
+  const insShift=shiftForWeek(tester,year,week);
+  const isWknd=insShift==='weekend';
+  const wd=WDS()[insShift];
   const cur=((wd[year]||{})[week]||{})[tester];
   const pts=cur?cur.p:0,tgt=getTarget(tester,week,year),isLive=cur&&cur.live;
   const pct=tgt>0?Math.min(100,Math.round(pts/tgt*100)):0;
@@ -1140,7 +1160,7 @@ function renderInsights(){
   const bestWk=allRows.length?Math.max(...allRows.map(r=>r.p)):0;
   const barC=pts>=tgt?'var(--green)':isLive?'var(--blue)':pts>=tgt*0.9?'var(--yellow)':'var(--red)';
   const statusText=tgt===0?'No target':isLive?'In progress':pts>=tgt?'On target':pts>=tgt*0.9?'Close':'Below target';
-  const weekLabel=isWknd?getWeekendLabel(week,year):getWeekLabel(week,year);
+  const weekLabel=getShiftLabel(insShift,week,year);
 
   // This week raw data
   const weekRows=historyRaw.filter(r=>parseInt(r['Week']||r['week'])===week&&parseInt(r['Year']||r['year'])===year&&(r['Tester']||'').trim()===tester);
@@ -1277,6 +1297,7 @@ function renderInsights(){
           <div><div class="insight-name">${tester}</div><div class="insight-week-label">${weekLabel}</div></div>
           ${isLive?'<div class="live-badge" style="margin-left:auto"><div class="live-dot"></div>Live</div>':''}
           ${isWknd?'<div style="margin-left:auto;background:var(--orange-bg);border:1px solid rgba(249,115,22,.2);color:var(--orange);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px">Weekend ☽</div>':''}
+          ${insShift==='midweek'?'<div style="margin-left:auto;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);color:#a78bfa;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px">Midweek ◑</div>':''}
         </div>
         <div>
           <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:700">Points this week</div>
@@ -1331,164 +1352,6 @@ function renderInsights(){
       </div>
     </div>`;
 }
-// ── SUPPORT CLAIMS ──
-let claimsView = 'monthly';
-let claimsStatusFilter = 'ALL'; // 'ALL' or one of CLAIM_STATUSES
-
-function parseClaimDate(str){
-  if(!str||!str.trim()||str.trim()==='N/A'||str.trim()==='N/ A') return null;
-  const s=str.trim();
-  const mdy=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if(mdy) return new Date(parseInt(mdy[3]),parseInt(mdy[1])-1,parseInt(mdy[2]));
-  const ymd=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(ymd) return new Date(parseInt(ymd[1]),parseInt(ymd[2])-1,parseInt(ymd[3]));
-  return null;
-}
-
-function getWeekNum(d){
-  const jan1=new Date(d.getFullYear(),0,1);
-  return Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
-}
-
-
-function getPeriodKey(d){
-  if(claimsView==='monthly')
-    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-  return d.getFullYear()+'-'+String(getWeekNum(d)).padStart(2,'0');
-}
-
-function getPeriodLabel(p){
-  const [y,n]=p.split('-');
-  if(claimsView==='monthly') return MONTHS[parseInt(n)]+' '+y;
-  return 'Week '+parseInt(n)+', '+y;
-}
-
-let selectedClaimsPeriod='';
-
-function initClaims(){
-  claimsView='monthly';
-  selectedClaimsPeriod='';
-  document.getElementById('claims-toggle-monthly').className='toggle-btn active';
-  document.getElementById('claims-toggle-weekly').className='toggle-btn';
-  renderClaims();
-}
-
-function setClaimsView(v){
-  claimsView=v;
-  selectedClaimsPeriod='';
-  document.getElementById('claims-toggle-monthly').className='toggle-btn'+(v==='monthly'?' active':'');
-  document.getElementById('claims-toggle-weekly').className='toggle-btn'+(v==='weekly'?' active':'');
-  renderClaims();
-}
-
-function renderClaims(){
-  // COUNTA: count every row that has a Game Title (col B) and a Discord date (col E)
-  // Group by period from col E, filter by status from col K
-  const rows = claimsRaw.filter(r=>(r['Game Title']||'').trim() && parseClaimDate(r['Discord / Slack Thread Date']));
-
-  // Build period list
-  const periodSet=new Set();
-  rows.forEach(r=>{
-    const d=parseClaimDate(r['Discord / Slack Thread Date']);
-    periodSet.add(getPeriodKey(d));
-  });
-  const periods=[...periodSet].sort().reverse();
-
-  // Build/update period dropdown
-  const ctrl=document.getElementById('claims-controls');
-  ctrl.innerHTML='';
-  const lbl=document.createElement('span');lbl.className='ctrl-label';
-  lbl.textContent=claimsView==='monthly'?'Month':'Week';
-  ctrl.appendChild(lbl);
-  const sel=document.createElement('select');sel.id='claims-period';
-  periods.forEach(p=>{
-    const o=document.createElement('option');o.value=p;o.textContent=getPeriodLabel(p);sel.appendChild(o);
-  });
-  // Restore or default to most recent
-  if(selectedClaimsPeriod && periods.includes(selectedClaimsPeriod)) sel.value=selectedClaimsPeriod;
-  else { sel.value=periods[0]||''; selectedClaimsPeriod=sel.value; }
-  sel.onchange=function(){ selectedClaimsPeriod=this.value; renderClaims(); };
-  ctrl.appendChild(sel);
-
-  const curPeriod=sel.value;
-
-  // Filter to selected period — COUNTA of col K per status
-  const periodRows=rows.filter(r=>{
-    const d=parseClaimDate(r['Discord / Slack Thread Date']);
-    return getPeriodKey(d)===curPeriod;
-  });
-
-  // Render status filter buttons
-  const filterBar = document.getElementById('claims-status-filters');
-  filterBar.innerHTML = '';
-  const allBtn = document.createElement('button');
-  allBtn.className = 'toggle-btn' + (claimsStatusFilter==='ALL'?' active':'');
-  allBtn.textContent = 'All';
-  allBtn.onclick = () => { claimsStatusFilter='ALL'; renderClaims(); };
-  filterBar.appendChild(allBtn);
-  CLAIM_STATUSES.forEach(s => {
-    const c = CLAIM_COLORS[s];
-    const btn = document.createElement('button');
-    btn.className = 'toggle-btn';
-    btn.style.cssText = claimsStatusFilter===s ? `background:${c};color:#fff;border-color:${c}` : `color:${c};border:1px solid ${c}44;background:${c}11`;
-    btn.textContent = CLAIM_SHORT[s];
-    btn.onclick = () => { claimsStatusFilter = claimsStatusFilter===s ? 'ALL' : s; renderClaims(); };
-    filterBar.appendChild(btn);
-  });
-
-  // Apply status filter on top of period rows
-  const visibleRows = claimsStatusFilter==='ALL' ? periodRows : periodRows.filter(r=>(r['Claim Status']||'').trim()===claimsStatusFilter);
-
-  // Sort by col E ascending
-  visibleRows.sort((a,b)=>parseClaimDate(a['Discord / Slack Thread Date'])-parseClaimDate(b['Discord / Slack Thread Date']));
-
-  // Count per status (COUNTA equivalent)
-  const counts={};
-  CLAIM_STATUSES.forEach(s=>counts[s]=0);
-  periodRows.forEach(r=>{
-    const s=(r['Claim Status']||'').trim();
-    if(counts[s]!==undefined) counts[s]++;
-  });
-  const total=visibleRows.length;
-
-  document.getElementById('claims-table-title').textContent=
-    claimsView==='monthly'?'Monthly claims tracker':'Weekly claims tracker';
-
-  // Stat strip — 7 cards
-  document.getElementById('claims-stats').style.gridTemplateColumns='repeat(7,1fr)';
-  document.getElementById('claims-stats').innerHTML=CLAIM_STATUSES.map(s=>{
-    const c=CLAIM_COLORS[s];
-    return '<div class="stat-card">'
-      +'<div class="stat-label" style="color:'+c+'">'+CLAIM_SHORT[s]+'</div>'
-      +'<div class="stat-value" style="color:'+c+'">'+counts[s]+'</div>'
-      +'<div class="stat-sub">of '+total+' total</div>'
-      +'</div>';
-  }).join('');
-
-  // Table: col B, col E, col K only
-  document.getElementById('claims-thead').innerHTML='<tr>'
-    +'<th>#</th><th>Game</th><th>Discord Date</th><th>Status</th></tr>';
-
-  const tbody=document.getElementById('claims-body');
-  tbody.innerHTML='';
-  if(!visibleRows.length){
-    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3)">No claims found for this period.</td></tr>';
-    return;
-  }
-  visibleRows.forEach((r,i)=>{
-    const s=(r['Claim Status']||'').trim();
-    const c=CLAIM_COLORS[s]||'#888';
-    const label=CLAIM_SHORT[s]||s;
-    const tr=document.createElement('tr');
-    tr.innerHTML='<td style="color:var(--text3);font-size:12px">'+(i+1)+'</td>'
-      +'<td style="font-weight:600">'+((r['Game Title']||'').trim()||'—')+'</td>'
-      +'<td style="color:var(--text3);font-size:12px">'+((r['Discord / Slack Thread Date']||'').trim()||'—')+'</td>'
-      +'<td><span class="badge" style="background:'+c+'18;color:'+c+';border:1px solid '+c+'44">'+label+'</span></td>';
-    tbody.appendChild(tr);
-  });
-}
-
-
 // ── EXPORT REPORT ──
 let exportType = 'weekly';
 
@@ -1505,7 +1368,7 @@ function buildExportControls() {
   ctrl.innerHTML = '';
 
   if (exportType === 'weekly') {
-    const allYears = [...new Set([...Object.keys(weeklyDataRegular), ...Object.keys(weeklyDataWeekend)].map(Number))].sort((a,b)=>b-a);
+    const allYears = [...new Set([...Object.keys(weeklyDataRegular), ...Object.keys(weeklyDataWeekend), ...Object.keys(weeklyDataMidweek)].map(Number))].sort((a,b)=>b-a);
     const ySel = document.createElement('select'); ySel.id = 'exp-year';
     allYears.forEach(y => { const o = document.createElement('option'); o.value=y; o.textContent=y; ySel.appendChild(o); });
     ySel.onchange = () => { buildExpWeekSelect(); renderExportPreview(); };
@@ -1543,7 +1406,8 @@ function buildExpWeekSelect() {
   const year = parseInt(ySel.value);
   const weeks = [...new Set([
     ...Object.keys(weeklyDataRegular[year]||{}).map(Number),
-    ...Object.keys(weeklyDataWeekend[year]||{}).map(Number)
+    ...Object.keys(weeklyDataWeekend[year]||{}).map(Number),
+    ...Object.keys(weeklyDataMidweek[year]||{}).map(Number)
   ])].sort((a,b)=>b-a);
   const lbl = document.createElement('span'); lbl.className='ctrl-label'; lbl.textContent='Week';
   const sel = document.createElement('select'); sel.id='exp-week'; sel.onchange=renderExportPreview;
@@ -1569,14 +1433,15 @@ function getExportRows() {
     });
     const rows = [];
     ALL_TESTERS.filter(t=>activeTesters.includes(t)).forEach(tester => {
-      const isWknd = WEEKEND_TESTERS.includes(tester) && week >= WEEKEND_CUTOFF_WEEK && year >= 2026;
-      const wd = isWknd ? weeklyDataWeekend : weeklyDataRegular;
+      const shift = shiftForWeek(tester, year, week);
+      const isWknd = shift === 'weekend';
+      const wd = WDS()[shift];
       const pts = ((wd[year]||{})[week]||{})[tester]?.p || 0;
       const tgt = getTarget(tester, week, year);
       const pct = tgt > 0 ? Math.round(pts/tgt*100) : 0;
       const status = pts >= tgt ? 'Hit' : pts >= tgt*0.8 ? 'Close' : 'Missed';
       const games = gameCounts[tester] || 0;
-      rows.push({ tester, pts, tgt, pct, status, isWknd, games });
+      rows.push({ tester, pts, tgt, pct, status, isWknd, shift, games });
     });
     return rows;
   } else {
@@ -1676,7 +1541,7 @@ function renderExportPreview() {
             const statusColor = r.status==='Hit'?'#22c55e':r.status==='Close'?'#eab308':'#ef4444';
             return `<tr style="border-bottom:1px solid #1c1c1c;">
               <td style="padding:10px 14px;color:#555;">${i+1}</td>
-              <td style="padding:10px 14px;font-weight:600;">${r.tester}${r.isWknd?' ☽':''}</td>
+              <td style="padding:10px 14px;font-weight:600;">${r.tester}${SHIFT_MARK[r.shift]||''}</td>
               <td style="padding:10px 14px;text-align:right;font-weight:700;color:#22c55e;">${r.pts}</td>
               <td style="padding:10px 14px;text-align:right;color:#888;">${r.games}</td>
               ${isWeekly ? `
@@ -1718,7 +1583,7 @@ function exportPDF() {
   rows2.forEach(function(r, i) {
     tableRows += '<tr style="border-bottom:1px solid #e5e7eb;background:' + (i%2===0?'#fff':'#f9fafb') + '">'
       + '<td style="padding:9px 14px;color:#9ca3af;font-size:12px;">' + (i+1) + '</td>'
-      + '<td style="padding:9px 14px;font-weight:600;color:#111;">' + r.tester + (r.isWknd?' ☽':'') + '</td>'
+      + '<td style="padding:9px 14px;font-weight:600;color:#111;">' + r.tester + (SHIFT_MARK[r.shift]||'') + '</td>'
       + '<td style="padding:9px 14px;text-align:right;font-weight:700;color:#16a34a;">' + r.pts + '</td>'
       + '<td style="padding:9px 14px;text-align:right;color:#374151;">' + r.games + '</td>'
       + (isW
@@ -1786,7 +1651,6 @@ function initSettings() {
   list.innerHTML = '';
   ALL_TESTERS.forEach(t => {
     const active = activeTesters.includes(t);
-    const isWknd = WEEKEND_TESTERS.includes(t);
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg2);border:1px solid ' + (active?'var(--accent2)':'var(--border)') + ';border-radius:8px;transition:border-color .15s;';
     row.id = 'trow-' + t;
@@ -1802,32 +1666,31 @@ function initSettings() {
     name.style.cssText = 'font-size:13px;font-weight:500;flex:1;';
     name.textContent = t;
 
-    // Shift toggle
+    // Shift toggle: Regular / Weekend / Midweek
     const shiftToggle = document.createElement('div');
     shiftToggle.style.cssText = 'display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;flex-shrink:0;';
+    const SH_BTN = [['regular', 'Regular', 'var(--accent2)'], ['weekend', '☽ Weekend', '#7c3aed'], ['midweek', '◑ Midweek', '#8b5cf6']];
+    const btns = {};
+    const paint = (sel) => SH_BTN.forEach(([k, , c]) => { btns[k].style.background = k === sel ? c : 'var(--bg3)'; btns[k].style.color = k === sel ? '#fff' : 'var(--text2)'; });
+    SH_BTN.forEach(([k, label]) => {
+      const b = document.createElement('button'); b.textContent = label;
+      b.style.cssText = 'padding:3px 10px;font-size:11px;font-weight:600;border:none;cursor:pointer;transition:all .15s;';
+      b.onclick = function(){ row.dataset.shift = k; paint(k); };
+      btns[k] = b; shiftToggle.appendChild(b);
+    });
+    row.dataset.shift = currentShiftOf(t);
+    paint(row.dataset.shift);
+    const hist = SHIFT_HISTORY[t];
+    if (hist && hist.length > 1 && hist[hist.length - 1].from) {
+      const since = document.createElement('span');
+      since.style.cssText = 'font-size:11px;color:var(--text3);flex-shrink:0;';
+      const prev = hist[hist.length - 2];
+      since.textContent = SHIFT_LABEL[hist[hist.length - 1].shift].replace(' Shift', '') + ' since ' + new Date(hist[hist.length - 1].from + 'T12:00:00Z').toLocaleString('default', { month: 'short', day: 'numeric', timeZone: 'UTC' }) + ' (was ' + SHIFT_LABEL[prev.shift].replace(' Shift', '').toLowerCase() + ')';
+      row.appendChild(cb); row.appendChild(name); row.appendChild(since); row.appendChild(shiftToggle);
+      list.appendChild(row);
+      return;
+    }
 
-    const btnReg = document.createElement('button');
-    btnReg.textContent = 'Regular';
-    btnReg.style.cssText = 'padding:3px 10px;font-size:11px;font-weight:600;border:none;cursor:pointer;transition:all .15s;background:' + (!isWknd?'var(--accent2)':'var(--bg3)') + ';color:' + (!isWknd?'#fff':'var(--text2)') + ';';
-
-    const btnWknd = document.createElement('button');
-    btnWknd.textContent = '☽ Weekend';
-    btnWknd.style.cssText = 'padding:3px 10px;font-size:11px;font-weight:600;border:none;cursor:pointer;transition:all .15s;background:' + (isWknd?'#7c3aed':'var(--bg3)') + ';color:' + (isWknd?'#fff':'var(--text2)') + ';';
-
-    btnReg.onclick = function(){
-      btnReg.style.background='var(--accent2)'; btnReg.style.color='#fff';
-      btnWknd.style.background='var(--bg3)'; btnWknd.style.color='var(--text2)';
-      row.dataset.shift = 'regular';
-    };
-    btnWknd.onclick = function(){
-      btnWknd.style.background='#7c3aed'; btnWknd.style.color='#fff';
-      btnReg.style.background='var(--bg3)'; btnReg.style.color='var(--text2)';
-      row.dataset.shift = 'weekend';
-    };
-    row.dataset.shift = isWknd ? 'weekend' : 'regular';
-
-    shiftToggle.appendChild(btnReg);
-    shiftToggle.appendChild(btnWknd);
     row.appendChild(cb);
     row.appendChild(name);
     row.appendChild(shiftToggle);
@@ -1844,20 +1707,30 @@ function setAllTesters(val) {
 }
 
 function applyTesterSettings() {
-  activeTesters = [];
-  WEEKEND_TESTERS = [];
+  const nextActive = [], nextWeekend = [], nextMidweek = [], today = todayET();
+  const nextHistory = JSON.parse(JSON.stringify(SHIFT_HISTORY));
   ALL_TESTERS.forEach(t => {
     const cb = document.getElementById('tcheck-' + t);
     const row = document.getElementById('trow-' + t);
-    if (cb && cb.checked) activeTesters.push(t);
-    if (row && row.dataset.shift === 'weekend') WEEKEND_TESTERS.push(t);
+    if (cb && cb.checked) nextActive.push(t);
+    const next = row ? row.dataset.shift : currentShiftOf(t), old = currentShiftOf(t);
+    if (next === 'weekend') nextWeekend.push(t);
+    if (next === 'midweek') nextMidweek.push(t);
+    // A shift change starts today (US Eastern); earlier weeks stay on the old shift
+    if (next !== old) {
+      const h = nextHistory[t] && nextHistory[t].length ? nextHistory[t].filter(e => e.from !== today) : [{ shift: old, from: '' }];
+      if (h[h.length - 1].shift !== next) h.push({ shift: next, from: today });
+      nextHistory[t] = h;
+    }
   });
-  if (!activeTesters.length) { alert('Please select at least one tester.'); return; }
-  REGULAR_TESTERS = ALL_TESTERS.filter(t=>!WEEKEND_TESTERS.includes(t));
+  if (!nextActive.length) { alert('Please select at least one tester.'); return; }
+  activeTesters = nextActive; WEEKEND_TESTERS = nextWeekend; MIDWEEK_TESTERS = nextMidweek; SHIFT_HISTORY = nextHistory;
   saveTesterSettings();
+  processHistory();
   renderWeekly();
+  renderIndividual();
   updateFooter();
-  alert('Settings saved! ' + activeTesters.length + ' active testers, ' + WEEKEND_TESTERS.length + ' on weekend shift.');
+  alert('Settings saved! ' + activeTesters.length + ' active testers, ' + WEEKEND_TESTERS.length + ' on weekend shift, ' + MIDWEEK_TESTERS.length + ' on midweek shift.');
 }
 
 function updateFooter(){
@@ -1890,7 +1763,7 @@ const WEEKEND_DAY_ORDERS  = [5,6,7,1,2,3]; // Thu-Tue
 function buildDailyData(year, week, shift) {
   // Returns { tester: { dayOrder: pts } }
   const result = {};
-  const isWknd = shift === 'weekend';
+  const isWknd = shift === 'weekend', isMid = shift === 'midweek';
 
   historyRaw.forEach(r => {
     const t = (r['Tester']||'').trim();
@@ -1901,8 +1774,8 @@ function buildDailyData(year, week, shift) {
     if(!t||isNaN(w)||isNaN(y)||isNaN(pts)||!dayOrder) return;
     if(!activeTesters.includes(t)) return;
 
-    const isWeekendTester = WEEKEND_TESTERS.includes(t);
-    if(isWknd !== isWeekendTester) return;
+    // Count the day under the shift the tester was on that day
+    if(shiftOn(t, rowDateISO(r)) !== shift) return;
 
     // For weekend shift daily tracker: match by calendar week directly
     // so we capture ALL days including those outside normal shift days
@@ -1918,6 +1791,10 @@ function buildDailyData(year, week, shift) {
       }
     }
 
+    if(isMid) {
+      if(dayOrder === 2) return;                    // Monday: outside the midweek shift
+      if(MIDWEEK_DAYS_NEXT.includes(dayOrder)) targetWeek = w - 1;  // Sunday closes the shift week before
+    }
     if(targetWeek !== week || y !== year) return;
 
     if(!result[t]) result[t] = {};
@@ -1943,6 +1820,11 @@ function populateDailyWeeks() {
     const regWks = Object.keys(weeklyDataRegular[year]||{}).map(Number);
     const wndWks = Object.keys(weeklyDataWeekend[year]||{}).map(Number);
     weeks = [...new Set([...regWks,...wndWks])].filter(w=>w>=WEEKEND_CUTOFF_WEEK).sort((a,b)=>a-b);
+  } else if(dailyShift === 'midweek') {
+    const from = midweekStartWeek(year);
+    const regWks = Object.keys(weeklyDataRegular[year]||{}).map(Number);
+    const mwWks = Object.keys(weeklyDataMidweek[year]||{}).map(Number);
+    weeks = from===null ? [] : [...new Set([...regWks,...mwWks])].filter(w=>w>=from).sort((a,b)=>a-b);
   } else {
     weeks = Object.keys(weeklyDataRegular[year]||{}).map(Number).sort((a,b)=>a-b);
   }
@@ -1955,6 +1837,7 @@ function setDailyShift(shift) {
   dailyShift = shift;
   document.getElementById('daily-toggle-regular').className = 'toggle-btn' + (shift==='regular'?' active':'');
   document.getElementById('daily-toggle-weekend').className = 'toggle-btn' + (shift==='weekend'?' active-weekend':'');
+  document.getElementById('daily-toggle-midweek').className = 'toggle-btn' + (shift==='midweek'?' active-midweek':'');
   populateDailyWeeks();
   renderDaily();
 }
@@ -1966,7 +1849,7 @@ function renderDaily() {
   if(!year||!week){ wrap.innerHTML='<div style="padding:24px;color:var(--text3)">No data.</div>'; return; }
 
   const dailyData = buildDailyData(year, week, dailyShift);
-  const testers = (dailyShift==='regular'?REGULAR_TESTERS:WEEKEND_TESTERS).filter(t=>activeTesters.includes(t));
+  const testers = testersOnShift(dailyShift, year, week);
   // For weekend shift: show all day orders that have any data
   // For regular: Mon-Fri (day orders 1-5)
   let dayOrders;
@@ -1974,6 +1857,8 @@ function renderDaily() {
     const allDayOrders = [1,2,3,4,5,6,7];
     dayOrders = allDayOrders.filter(d => testers.some(t => dailyData[t] && dailyData[t][d]));
     if(!dayOrders.length) dayOrders = [5,6,7,1,2,3]; // fallback if no data yet
+  } else if(dailyShift === 'midweek') {
+    dayOrders = [3,4,5,6,7,1]; // Tue-Sun (Sunday of the next calendar week)
   } else {
     dayOrders = [1,2,3,4,5,6,7]; // Sun-Sat
   }
@@ -1988,7 +1873,7 @@ function renderDaily() {
   });
 
   let html = '<div class="card-header" style="padding:14px 18px;border-bottom:1px solid var(--border);">'
-    + '<span class="card-title">Daily Tracker — ' + (dailyShift==='weekend'?'Weekend Shift':'Regular') + ' · Week ' + week + ', ' + year + '</span></div>'
+    + '<span class="card-title">Daily Tracker — ' + SHIFT_LABEL[dailyShift] + ' · Week ' + week + ', ' + year + '</span></div>'
     + '<div style="overflow-x:auto;"><table class="data-table" style="min-width:600px;">'
     + '<thead><tr><th>Tester</th>';
   
@@ -2031,8 +1916,10 @@ function applyRosterIfPublic(){
   const rosterTesters = Object.keys(rosterMap);
   ALL_TESTERS = rosterTesters.slice();
   WEEKEND_TESTERS = rosterTesters.filter(t => rosterMap[t].shift === 'weekend');
-  REGULAR_TESTERS = rosterTesters.filter(t => rosterMap[t].shift !== 'weekend');
+  MIDWEEK_TESTERS = rosterTesters.filter(t => rosterMap[t].shift === 'midweek');
   activeTesters = rosterTesters.filter(t => rosterMap[t].active);
+  // Recorded shift changes (DEFAULT_SHIFT_HISTORY) take priority over the roster's Shift column
+  syncShiftsFromHistory();
 }
 
 // ── PUBLIC READ-ONLY MODE ──
@@ -2045,7 +1932,8 @@ function lockPublicWeek(){
   // Determine latest year available in data
   const allYears = [...new Set([
     ...Object.keys(weeklyDataRegular).map(Number),
-    ...Object.keys(weeklyDataWeekend).map(Number)
+    ...Object.keys(weeklyDataWeekend).map(Number),
+    ...Object.keys(weeklyDataMidweek).map(Number)
   ])].filter(y=>!isNaN(y)).sort((a,b)=>b-a);
   const latestYear = allYears[0] || new Date().getFullYear();
 
